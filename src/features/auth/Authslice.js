@@ -1,72 +1,78 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
- 
-const BASE_URL = import.meta.env.VITE_BASE_URL;
- 
-export const login = createAsyncThunk(
-  "auth/login",
-  async ({ email, password }, { rejectWithValue }) => {
-    try {
-      const res = await fetch(`${BASE_URL}/admin/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
- 
-      const data = await res.json();
- 
-      if (!res.ok) {
-        return rejectWithValue(data.message || "Invalid email or password.");
+// src/features/auth/Authslice.js
+import { createSlice } from "@reduxjs/toolkit";
+
+// Safe way to get initial state from localStorage
+const getInitialState = () => {
+  try {
+    const token = localStorage.getItem("token");
+    const userStr = localStorage.getItem("user");
+
+    let user = null;
+
+    if (userStr) {
+      try {
+        user = JSON.parse(userStr);
+      } catch (parseError) {
+        console.warn("Failed to parse user from localStorage. Clearing corrupted data.");
+        localStorage.removeItem("user");
       }
- 
-      localStorage.setItem("token", data.token);
-      return { token: data.token, email };
-    } catch (err) {
-      return rejectWithValue("Network error. Please try again.");
     }
+
+    return {
+      isAuthenticated: !!token && !!user,   // Only authenticated if both exist
+      user: user,
+      token: token || null,
+    };
+  } catch (error) {
+    console.error("Error loading auth state:", error);
+    // Clear everything if something goes wrong
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    return {
+      isAuthenticated: false,
+      user: null,
+      token: null,
+    };
   }
-);
- 
+};
+
 const authSlice = createSlice({
   name: "auth",
-  initialState: {
-    isAuthenticated: !!localStorage.getItem("token"),
-    user: null,
-    token: localStorage.getItem("token") || null,
-    error: null,
-    loading: false,
-  },
+  initialState: getInitialState(),
   reducers: {
+    loginSuccess(state, action) {
+      const { token, user } = action.payload;
+
+      state.isAuthenticated = true;
+      state.token = token;
+      state.user = user;
+
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
+    },
+
     logout(state) {
       state.isAuthenticated = false;
       state.user = null;
       state.token = null;
-      state.error = null;
+
       localStorage.removeItem("token");
+      localStorage.removeItem("user");
+
+      // Clear TanStack Query cache if exists
+      if (window.queryClient?.clear) {
+        window.queryClient.clear();
+      }
     },
-    clearError(state) {
-      state.error = null;
+
+    updateUser(state, action) {
+      if (state.user) {
+        state.user = { ...state.user, ...action.payload };
+        localStorage.setItem("user", JSON.stringify(state.user));
+      }
     },
-  },
-  extraReducers: (builder) => {
-    builder
-      .addCase(login.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(login.fulfilled, (state, action) => {
-        state.loading = false;
-        state.isAuthenticated = true;
-        state.token = action.payload.token;
-        state.user = { email: action.payload.email };
-        state.error = null;
-      })
-      .addCase(login.rejected, (state, action) => {
-        state.loading = false;
-        state.isAuthenticated = false;
-        state.error = action.payload;
-      });
   },
 });
- 
-export const { logout, clearError } = authSlice.actions;
+
+export const { loginSuccess, logout, updateUser } = authSlice.actions;
 export default authSlice.reducer;

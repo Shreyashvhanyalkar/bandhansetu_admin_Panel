@@ -1,12 +1,13 @@
+// src/pages/auth/Login.jsx
 import { useState, useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { useNavigate, Link } from "react-router-dom";
-import { login, clearError } from "../../features/auth/Authslice";
+import { useLogin } from "../../hooks/useAuthMutations";
 
 export default function Login() {
-  const dispatch = useDispatch();
+  const loginMutation = useLogin();
   const navigate = useNavigate();
-  const { isAuthenticated, error, loading } = useSelector((s) => s.auth);
+  const { isAuthenticated } = useSelector((s) => s.auth);
   const [form, setForm] = useState({ email: "", password: "" });
   const [showPass, setShowPass] = useState(false);
 
@@ -15,13 +16,12 @@ export default function Login() {
   }, [isAuthenticated, navigate]);
 
   const handleChange = (e) => {
-    dispatch(clearError());
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    dispatch(login(form));
+    loginMutation.mutate(form);
   };
 
   return (
@@ -30,16 +30,16 @@ export default function Login() {
       style={{ background: "linear-gradient(135deg, #4a0000 0%, #8B0000 50%, #4a0000 100%)" }}
     >
       {/* Decorative circles */}
-      <div className="absolute -top-20 -left-20 w-72 h-72 rounded-full opacity-10"
+      <div className="absolute -top-20 -left-20 w-72 h-72 rounded-full opacity-10 animate-pulse"
         style={{ background: "#ff4444" }} />
-      <div className="absolute -bottom-32 -right-20 w-96 h-96 rounded-full opacity-10"
+      <div className="absolute -bottom-32 -right-20 w-96 h-96 rounded-full opacity-10 animate-pulse delay-1000"
         style={{ background: "#ff4444" }} />
 
       <div className="relative w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden transform transition-all duration-300 hover:scale-105">
           {/* Top banner */}
           <div className="px-8 py-7 text-center" style={{ background: "linear-gradient(135deg, #4a0000, #8B0000)" }}>
-            <div className="text-4xl mb-2">💍</div>
+            <div className="text-4xl mb-2 animate-bounce">💍</div>
             <h1 className="text-white text-2xl font-bold tracking-tight">BandhanSetu</h1>
             <p className="text-red-200 text-xs tracking-widest uppercase mt-1 font-medium">Admin Portal</p>
           </div>
@@ -58,11 +58,10 @@ export default function Login() {
                   name="email"
                   value={form.email}
                   onChange={handleChange}
-                  placeholder="admin@bandhansetu.com"
+                  placeholder="admin@test.com"
                   required
-                  className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-800 bg-gray-50 outline-none transition-all duration-150 focus:bg-white"
-                  onFocus={e => e.target.style.borderColor = "#8B0000"}
-                  onBlur={e => e.target.style.borderColor = "#e5e7eb"}
+                  disabled={loginMutation.isPending}
+                  className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-800 bg-gray-50 outline-none transition-all duration-150 focus:bg-white focus:border-red-500 disabled:opacity-50"
                 />
               </div>
 
@@ -76,11 +75,10 @@ export default function Login() {
                     name="password"
                     value={form.password}
                     onChange={handleChange}
-                    placeholder="Enter your password"
+                    placeholder="it@123"
                     required
-                    className="w-full border border-gray-200 rounded-lg px-4 py-2.5 pr-11 text-sm text-gray-800 bg-gray-50 outline-none transition-all duration-150 focus:bg-white"
-                    onFocus={e => e.target.style.borderColor = "#8B0000"}
-                    onBlur={e => e.target.style.borderColor = "#e5e7eb"}
+                    disabled={loginMutation.isPending}
+                    className="w-full border border-gray-200 rounded-lg px-4 py-2.5 pr-11 text-sm text-gray-800 bg-gray-50 outline-none transition-all duration-150 focus:bg-white focus:border-red-500 disabled:opacity-50"
                   />
                   <button
                     type="button"
@@ -100,47 +98,61 @@ export default function Login() {
                 </div>
               </div>
 
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg px-4 py-2.5 flex items-center gap-2">
+              {loginMutation.isError && (
+                <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg px-4 py-2.5 flex items-center gap-2 animate-shake">
                   <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  {error}
+                  {loginMutation.error.message}
                 </div>
               )}
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loginMutation.isPending}
                 className="w-full text-white font-semibold py-2.5 rounded-lg transition-all duration-150 active:scale-[0.98] mt-2 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                 style={{ background: "#8B0000" }}
-                onMouseEnter={e => { if (!loading) e.target.style.background = "#a80000"; }}
-                onMouseLeave={e => { if (!loading) e.target.style.background = "#8B0000"; }}
+                onMouseEnter={e => { if (!loginMutation.isPending) e.target.style.background = "#a80000"; }}
+                onMouseLeave={e => { if (!loginMutation.isPending) e.target.style.background = "#8B0000"; }}
               >
-                {loading && (
+                {loginMutation.isPending && (
                   <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                   </svg>
                 )}
-                {loading ? "Signing in..." : "Sign In"}
+                {loginMutation.isPending ? "Signing in..." : "Sign In"}
               </button>
             </form>
 
             <p className="text-center text-sm text-gray-400 mt-5">
               Don't have an account?{" "}
-              <Link to="/register" className="font-semibold hover:underline" style={{ color: "#8B0000" }}>
+              <Link to="/register" className="font-semibold hover:underline transition-colors" style={{ color: "#8B0000" }}>
                 Register
               </Link>
             </p>
 
             <div className="mt-4 bg-amber-50 border border-amber-100 rounded-lg px-4 py-3 text-center">
               <p className="text-xs font-semibold text-amber-700">Demo Credentials</p>
-              <p className="text-xs text-amber-600 mt-0.5">admin@test.com&nbsp;/&nbsp;it@123</p>
+              <p className="text-xs text-amber-600 mt-0.5">admin@bandhansetu.com / Admin@1234</p>
             </div>
           </div>
         </div>
       </div>
+
+      <style>{`
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-5px); }
+          75% { transform: translateX(5px); }
+        }
+        .animate-shake {
+          animation: shake 0.3s ease-in-out;
+        }
+        .delay-1000 {
+          animation-delay: 1000ms;
+        }
+      `}</style>
     </div>
   );
 }

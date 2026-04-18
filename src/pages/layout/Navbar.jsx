@@ -1,73 +1,104 @@
+// components/admin/Navbar.jsx
 import { useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 
 const pageTitles = {
+  "/admin/dashboard": "Dashboard",
+  "/admin/dashboard/analytics": "Analytics",
+  "/admin/dashboard/performance": "Performance",
   "/admin/requests": "User Requests",
+  "/admin/requests/pending": "Pending Approvals",
+  "/admin/requests/approved": "Approved Requests",
+  "/admin/requests/rejected": "Rejected Requests",
+  "/admin/reports/complaints": "View Complaints",
+  "/admin/reports/warned": "Warned Users",
+  "/admin/reports/blocked": "Blocked Users",
+  "/admin/reports/ignored": "Ignored Reports",
+  "/admin/notifications/send": "Send Notification",
+  "/admin/notifications/broadcast": "Broadcast All",
+  "/admin/notifications/target": "Target Specific Users",
+  "/admin/notifications/scheduled": "Scheduled Notifications",
+  "/admin/notifications/status": "Read Status",
 };
 
 export default function Navbar({ onMenuClick }) {
   const { user } = useSelector((s) => s.auth);
   const location = useLocation();
-  const title = pageTitles[location.pathname] || "Dashboard";
+
+  const title =
+    pageTitles[location.pathname] ||
+    (location.pathname.startsWith("/admin/reports") ? "Reports" :
+     location.pathname.startsWith("/admin/notifications") ? "Notifications" :
+     location.pathname.startsWith("/admin/requests") ? "User Requests" :
+     "Dashboard");
 
   return (
-    <header className="bg-white border-b border-gray-100 px-4 sm:px-6 py-3 flex items-center justify-between gap-4 sticky top-0 z-30">
-      {/* Left: hamburger + page title */}
-      <div className="flex items-center gap-3">
-        {/* Hamburger — mobile only */}
+    <header className="bg-white border-b border-gray-100 px-4 sm:px-6 py-3 flex items-center justify-between gap-4 sticky top-0 z-30 shadow-sm">
+      {/* Left Side - Logo + Title */}
+      <div className="flex items-center gap-4">
+        {/* Mobile Menu Button */}
         <button
           onClick={onMenuClick}
-          className="lg:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition"
+          className="lg:hidden p-2 rounded-xl text-gray-500 hover:bg-gray-100 transition-colors"
           aria-label="Open sidebar"
         >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
 
-        <div>
-          <h2 className="text-gray-800 font-semibold text-base sm:text-lg leading-tight">{title}</h2>
-          <p className="text-gray-400 text-xs hidden sm:block">BandhanSetu Admin Panel</p>
+        {/* GOGO Logo */}
+       
+
+        {/* Page Title */}
+        <div className="hidden sm:block pl-6 border-l border-gray-200">
+          <h1 className="text-lg font-semibold text-gray-800">{title}</h1>
         </div>
       </div>
 
-      {/* Right: search + notifications + avatar */}
-      <div className="flex items-center gap-2 sm:gap-3">
-        {/* Search bar — hidden on very small screens */}
-        <div className="hidden md:flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 w-48 lg:w-60">
-          <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      {/* Right Side */}
+      <div className="flex items-center gap-2 sm:gap-4">
+        {/* Search Bar */}
+        <div className="hidden md:flex items-center bg-gray-50 border border-gray-200 rounded-2xl px-4 py-2 w-56 lg:w-72 focus-within:border-purple-400 focus-within:ring-1 focus-within:ring-purple-200 transition-all">
+          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           <input
             type="text"
             placeholder="Search…"
-            className="bg-transparent text-sm text-gray-600 outline-none w-full placeholder-gray-400"
+            className="ml-3 bg-transparent text-sm outline-none placeholder-gray-400 w-full"
           />
         </div>
 
-        {/* Notifications */}
-        <button className="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition">
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+        {/* Icons */}
+        <button className="p-2.5 rounded-2xl text-gray-500 hover:bg-gray-100 transition-colors relative">
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
           </svg>
-          <span
-            className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full"
-            style={{ background: "#8B0000" }}
-          />
+          <span className="absolute top-2 right-2 w-2 h-2 bg-fuchsia-500 rounded-full ring-2 ring-white"></span>
         </button>
 
-        {/* Avatar */}
-        <div className="flex items-center gap-2 pl-1 sm:pl-2 border-l border-gray-100">
-          <div
-            className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
-            style={{ background: "#8B0000" }}
-          >
-            {user?.name?.[0]?.toUpperCase() || "A"}
+        <button className="p-2.5 rounded-2xl text-gray-500 hover:bg-gray-100 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14v6m-3-3h6M6 10h2a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v2a2 2 0 002 2zm10 0h2a2 2 0 002-2v-2a2 2 0 00-2-2h-2a2 2 0 00-2 2v2a2 2 0 002 2zM6 20h2a2 2 0 002-2v-2a2 2 0 00-2-2H6a2 2 0 00-2 2v2a2 2 0 002 2" />
+          </svg>
+        </button>
+
+        
+
+        {/* User Profile */}
+        <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
+          <div className="text-right hidden sm:block">
+            <p className="text-sm font-semibold text-gray-800 leading-none">{user?.name || "Admin"}</p>
+            <p className="text-xs text-gray-400">Administrator</p>
           </div>
-          <div className="hidden sm:block">
-            <p className="text-gray-800 text-sm font-semibold leading-tight">{user?.name || "Admin"}</p>
-            <p className="text-gray-400 text-xs">Administrator</p>
+
+          <div className="w-9 h-9 rounded-2xl overflow-hidden ring-2 ring-purple-100">
+            <img
+              src="https://i.pravatar.cc/128?u=laura" 
+              alt="Laura Ellis"
+              className="w-full h-full object-cover"
+            />
           </div>
         </div>
       </div>

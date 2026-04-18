@@ -6,7 +6,9 @@ import Register from "./pages/auth/Register";
 import Layout from "./pages/layout/Layout";
 import Dashboard from "./pages/admin/Dashboard";  // Add this import
 import ApproveReject from "./pages/admin/AproveReject";
-
+import Reports from "./pages/admin/Reports";
+import Notifications from "./pages/admin/Notifications";
+import ReligionManagement from "./pages/admin/ReligionManagement";
 export default function App() {
   const { isAuthenticated } = useSelector((state) => state.auth);
 
@@ -25,17 +27,19 @@ export default function App() {
             !isAuthenticated ? <Register /> : <Navigate to="/admin/dashboard" replace />
           }
         />
-        <Route
-          path="/admin"
-          element={
-            isAuthenticated ? <Layout /> : <Navigate to="/login" replace />
-          }
-        >
-          {/* Add the Dashboard route */}
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="requests" element={<ApproveReject />} />
-          <Route index element={<Navigate to="dashboard" replace />} />
-        </Route>
+        <Route path="/admin" element={isAuthenticated ? <Layout /> : <Navigate to="/login" replace />}>
+  
+  <Route path="dashboard" element={<Dashboard />} />
+  <Route path="/admin/religion/*" element={<ReligionManagement />} />
+  <Route path="requests" element={<ApproveReject />} />
+  <Route path="religion" element={<ReligionManagement />} />
+
+  {/* ✅ FIXED */}
+  <Route path="reports/*" element={<Reports />} />
+<Route path="notifications/*" element={<Notifications />} />
+
+  <Route index element={<Navigate to="dashboard" replace />} />
+</Route>
         <Route
           path="*"
           element={

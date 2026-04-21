@@ -4,7 +4,7 @@ import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../../features/auth/Authslice";
 
-// ─── Navigation Items with Religion, Cast, Sub-Cast Hierarchy ─────────────────
+// ─── Navigation Items ─────────────────────────────────────────────────────────
 const NAV_ITEMS = [
   {
     label: "Dashboard",
@@ -21,6 +21,7 @@ const NAV_ITEMS = [
   },
   {
     label: "Religion & Community",
+    to: "/admin/religion",
     icon: (
       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
@@ -29,118 +30,6 @@ const NAV_ITEMS = [
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 10h6" />
       </svg>
     ),
-    children: [
-      {
-        label: "Hinduism",
-        to: "/admin/religion/hinduism",
-        icon: "🕉️",
-        children: [
-          {
-            label: "Brahmin", to: "/admin/religion/hinduism/brahmin", children: [
-              { label: "Gaur Brahmin", to: "/admin/religion/hinduism/brahmin/gaur" },
-              { label: "Kanyakubj Brahmin", to: "/admin/religion/hinduism/brahmin/kanyakubj" },
-              { label: "Saryuparin Brahmin", to: "/admin/religion/hinduism/brahmin/saryuparin" },
-              { label: "Maithil Brahmin", to: "/admin/religion/hinduism/brahmin/maithil" },
-            ]
-          },
-          {
-            label: "Kshatriya", to: "/admin/religion/hinduism/kshatriya", children: [
-              { label: "Rajput", to: "/admin/religion/hinduism/kshatriya/rajput" },
-              { label: "Thakur", to: "/admin/religion/hinduism/kshatriya/thakur" },
-              { label: "Singh", to: "/admin/religion/hinduism/kshatriya/singh" },
-            ]
-          },
-          {
-            label: "Vaishya", to: "/admin/religion/hinduism/vaishya", children: [
-              { label: "Baniya", to: "/admin/religion/hinduism/vaishya/baniya" },
-              { label: "Gupta", to: "/admin/religion/hinduism/vaishya/gupta" },
-              { label: "Agarwal", to: "/admin/religion/hinduism/vaishya/agarwal" },
-            ]
-          },
-          {
-            label: "Shudra", to: "/admin/religion/hinduism/shudra", children: [
-              { label: "Yadav", to: "/admin/religion/hinduism/shudra/yadav" },
-              { label: "Kurmi", to: "/admin/religion/hinduism/shudra/kurmi" },
-              { label: "Kumhar", to: "/admin/religion/hinduism/shudra/kumhar" },
-            ]
-          },
-          { label: "Other Hindu Castes", to: "/admin/religion/hinduism/other" },
-        ],
-      },
-      {
-        label: "Islam",
-        to: "/admin/religion/islam",
-        icon: "☪️",
-        children: [
-          {
-            label: "Sunni", to: "/admin/religion/islam/sunni", children: [
-              { label: "Hanafi", to: "/admin/religion/islam/sunni/hanafi" },
-              { label: "Shafi'i", to: "/admin/religion/islam/sunni/shafii" },
-            ]
-          },
-          {
-            label: "Shia", to: "/admin/religion/islam/shia", children: [
-              { label: "Ithna Ashari", to: "/admin/religion/islam/shia/ithna" },
-              { label: "Ismaili", to: "/admin/religion/islam/shia/ismaili" },
-            ]
-          },
-          { label: "Other Muslim Sects", to: "/admin/religion/islam/other" },
-        ],
-      },
-      {
-        label: "Sikhism",
-        to: "/admin/religion/sikhism",
-        icon: "✡️",
-        children: [
-          { label: "Jat Sikh", to: "/admin/religion/sikhism/jat" },
-          { label: "Khatri Sikh", to: "/admin/religion/sikhism/khatri" },
-          { label: "Ramgarhia", to: "/admin/religion/sikhism/ramgarhia" },
-          { label: "Other Sikh Castes", to: "/admin/religion/sikhism/other" },
-        ],
-      },
-      {
-        label: "Christianity",
-        to: "/admin/religion/christianity",
-        icon: "✝️",
-        children: [
-          { label: "Roman Catholic", to: "/admin/religion/christianity/catholic" },
-          { label: "Protestant", to: "/admin/religion/christianity/protestant" },
-          { label: "Orthodox", to: "/admin/religion/christianity/orthodox" },
-          { label: "Other Christian Denominations", to: "/admin/religion/christianity/other" },
-        ],
-      },
-      {
-        label: "Jainism",
-        to: "/admin/religion/jainism",
-        icon: "🔔",
-        children: [
-          { label: "Digambar", to: "/admin/religion/jainism/digambar" },
-          { label: "Shwetambar", to: "/admin/religion/jainism/shwetambar" },
-          { label: "Other Jain Sects", to: "/admin/religion/jainism/other" },
-        ],
-      },
-      {
-        label: "Buddhism",
-        to: "/admin/religion/buddhism",
-        icon: "☸️",
-        children: [
-          { label: "Mahayana", to: "/admin/religion/buddhism/mahayana" },
-          { label: "Theravada", to: "/admin/religion/buddhism/theravada" },
-          { label: "Vajrayana", to: "/admin/religion/buddhism/vajrayana" },
-        ],
-      },
-      {
-        label: "Other Religions",
-        to: "/admin/religion/other",
-        icon: "🕊️",
-        children: [
-          { label: "Zoroastrianism (Parsi)", to: "/admin/religion/other/zoroastrian" },
-          { label: "Judaism", to: "/admin/religion/other/judaism" },
-          { label: "Baháʼí", to: "/admin/religion/other/bahai" },
-          { label: "No Religion (Atheist/Agnostic)", to: "/admin/religion/other/none" },
-        ],
-      },
-    ],
   },
   {
     label: "User Requests",
@@ -149,12 +38,8 @@ const NAV_ITEMS = [
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
       </svg>
     ),
-    
     children: [
       { label: "User Management", to: "/admin/requests" },
-      // { label: "Pending Approvals", to: "/admin/requests/pending", badge: "8" },
-      // { label: "Approved", to: "/admin/requests/approved" },
-      // { label: "Rejected", to: "/admin/requests/rejected" },
     ],
   },
   {
@@ -204,6 +89,7 @@ const NAV_ITEMS = [
   },
 ];
 
+// ─── Chevron ──────────────────────────────────────────────────────────────────
 function Chevron({ open }) {
   return (
     <svg
@@ -216,7 +102,7 @@ function Chevron({ open }) {
   );
 }
 
-// Recursive NavGroup component for multi-level hierarchy
+// ─── Recursive NavGroup ───────────────────────────────────────────────────────
 function NavGroup({ item, onClose, isMobile, depth = 0 }) {
   const location = useLocation();
   const [open, setOpen] = useState(false);
@@ -229,49 +115,42 @@ function NavGroup({ item, onClose, isMobile, depth = 0 }) {
   }, [location.pathname, item.children]);
 
   const hasChildren = item.children && item.children.length > 0;
-  const isActive = !hasChildren && location.pathname === item.to;
   const isParentActive = hasChildren && item.children.some(
     c => location.pathname === c.to || location.pathname.startsWith(c.to + "/")
   );
 
-  // Calculate padding based on depth for visual hierarchy
   const getPaddingClass = () => {
     if (depth === 0) return "pl-3";
     if (depth === 1) return "pl-10";
-    if (depth === 2) return "pl-14";
-    return "pl-18";
+    return "pl-14";
   };
 
-  // Get left border style for active items
-  const getActiveBorderClass = (isActive) => {
-    if (isActive && depth === 0) return "border-l-2 border-fuchsia-500";
-    if (isActive && depth === 1) return "border-l-2 border-fuchsia-400";
-    if (isActive && depth === 2) return "border-l-2 border-fuchsia-300";
-    return "";
+  const getActiveBorderClass = () => {
+    if (depth === 0) return "border-l-2 border-fuchsia-500";
+    if (depth === 1) return "border-l-2 border-fuchsia-400";
+    return "border-l-2 border-fuchsia-300";
   };
 
-  // Single link (no children)
+  // ── Direct link (no children) ─────────────────────────────────────────────
   if (!hasChildren) {
     return (
       <NavLink
         to={item.to}
         onClick={() => isMobile && onClose?.()}
         className={({ isActive }) =>
-          `flex items-center gap-2 ${getPaddingClass()} py-2 rounded-lg text-sm font-medium transition-all duration-200 my-0.5 ${isActive
-            ? `bg-gradient-to-r from-fuchsia-50 to-transparent text-fuchsia-700 shadow-sm ${getActiveBorderClass(true)}`
-            : "text-gray-600 hover:bg-gray-100 hover:text-fuchsia-600"
+          `flex items-center gap-2 ${getPaddingClass()} py-2 rounded-lg text-sm font-medium transition-all duration-200 my-0.5 ${
+            isActive
+              ? `bg-gradient-to-r from-fuchsia-50 to-transparent text-fuchsia-700 shadow-sm ${getActiveBorderClass()}`
+              : "text-gray-600 hover:bg-gray-100 hover:text-fuchsia-600"
           }`
         }
       >
         {({ isActive }) => (
           <>
-            {item.icon && depth === 0 && (
+            {item.icon && (
               <span className={`transition-all duration-200 ${isActive ? "text-fuchsia-600" : "text-gray-400"}`}>
                 {item.icon}
               </span>
-            )}
-            {item.icon && depth > 0 && (
-              <span className="text-xs">{item.icon}</span>
             )}
             <span className="flex-1">{item.label}</span>
             {item.badge && (
@@ -285,22 +164,21 @@ function NavGroup({ item, onClose, isMobile, depth = 0 }) {
     );
   }
 
+  // ── Expandable group ──────────────────────────────────────────────────────
   return (
     <div className="my-0.5">
       <button
         onClick={() => setOpen(v => !v)}
-        className={`w-full flex items-center gap-2 ${getPaddingClass()} py-2 rounded-lg text-sm font-medium transition-all duration-200 ${open || isParentActive
+        className={`w-full flex items-center gap-2 ${getPaddingClass()} py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+          open || isParentActive
             ? "text-fuchsia-700 bg-gray-100/80"
             : "text-gray-600 hover:bg-gray-100 hover:text-fuchsia-600"
-          }`}
+        }`}
       >
-        {item.icon && depth === 0 && (
+        {item.icon && (
           <span className={`transition-all duration-200 ${open || isParentActive ? "text-fuchsia-600" : "text-gray-400"}`}>
             {item.icon}
           </span>
-        )}
-        {item.icon && depth > 0 && (
-          <span className="text-sm">{item.icon}</span>
         )}
         <span className="flex-1 text-left font-medium">{item.label}</span>
         {item.badge && (
@@ -314,8 +192,9 @@ function NavGroup({ item, onClose, isMobile, depth = 0 }) {
       </button>
 
       <div
-        className={`overflow-hidden transition-all duration-300 ease-out ${open ? "max-h-[500px] opacity-100 mt-0.5" : "max-h-0 opacity-0"
-          }`}
+        className={`overflow-hidden transition-all duration-300 ease-out ${
+          open ? "max-h-[500px] opacity-100 mt-0.5" : "max-h-0 opacity-0"
+        }`}
       >
         <div className="ml-2 space-y-0.5">
           {item.children.map(child => (
@@ -333,6 +212,7 @@ function NavGroup({ item, onClose, isMobile, depth = 0 }) {
   );
 }
 
+// ─── Sidebar Content ──────────────────────────────────────────────────────────
 function SidebarContent({ onClose, isMobile }) {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -340,8 +220,8 @@ function SidebarContent({ onClose, isMobile }) {
 
   return (
     <div className="flex flex-col h-full bg-white rounded-t-4xl font-['Inter',system-ui,-apple-system,sans-serif]">
-      {/* Logo Section */}
-      <div className="px-5 py-6 border-b border-gray-100  flex items-center gap-3">
+      {/* Logo */}
+      <div className="px-5 py-6 border-b border-gray-100 flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-fuchsia-500 to-fuchsia-600 flex items-center justify-center shadow-md">
           <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
@@ -390,53 +270,44 @@ function SidebarContent({ onClose, isMobile }) {
   );
 }
 
+// ─── Main Export ──────────────────────────────────────────────────────────────
 export default function Sidebar({ isOpen, onClose }) {
   return (
     <>
-      {/* Desktop Sidebar */}
+      {/* Desktop */}
       <aside className="hidden lg:flex flex-col w-80 min-h-screen shrink-0 bg-white border-r border-gray-100 shadow-lg shadow-gray-100/50 rounded-r-3xl">
         <SidebarContent isMobile={false} />
       </aside>
 
-      {/* Mobile Sidebar - Drawer */}
+      {/* Mobile Drawer */}
       {isOpen && (
-  <div className="lg:hidden fixed inset-0 z-50 flex">
-    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fade-in" onClick={onClose} />
-    <aside className="relative w-80 max-w-[85vw] h-full bg-white shadow-2xl z-10 flex flex-col animate-slide-in-right rounded-r-3xl">
-      <button
-        onClick={onClose}
-        className="absolute top-4 right-4 p-2 rounded-xl text-gray-400 hover:text-fuchsia-600 hover:bg-fuchsia-50 transition-all z-10"
-      >
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-      <SidebarContent onClose={onClose} isMobile={true} />
-    </aside>
-  </div>
-)}
+        <div className="lg:hidden fixed inset-0 z-50 flex">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fade-in" onClick={onClose} />
+          <aside className="relative w-80 max-w-[85vw] h-full bg-white shadow-2xl z-10 flex flex-col animate-slide-in-right rounded-r-3xl">
+            <button
+              onClick={onClose}
+              className="absolute top-4 right-4 p-2 rounded-xl text-gray-400 hover:text-fuchsia-600 hover:bg-fuchsia-50 transition-all z-10"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <SidebarContent onClose={onClose} isMobile={true} />
+          </aside>
+        </div>
+      )}
 
       <style>{`
         @keyframes slideInRight {
-          from {
-            transform: translateX(-100%);
-            opacity: 0;
-          }
-          to {
-            transform: translateX(0);
-            opacity: 1;
-          }
+          from { transform: translateX(-100%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
         }
         @keyframes fadeIn {
           from { opacity: 0; }
           to { opacity: 1; }
         }
-        .animate-slide-in-right {
-          animation: slideInRight 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1) forwards;
-        }
-        .animate-fade-in {
-          animation: fadeIn 0.2s ease-out forwards;
-        }
+        .animate-slide-in-right { animation: slideInRight 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1) forwards; }
+        .animate-fade-in { animation: fadeIn 0.2s ease-out forwards; }
       `}</style>
     </>
   );

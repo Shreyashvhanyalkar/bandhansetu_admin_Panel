@@ -1,5 +1,5 @@
 // pages/admin/ReligionManagement.jsx
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 import {
   useGetReligions, useAddReligion, useEditReligion, useDeleteReligion,
@@ -7,36 +7,100 @@ import {
   useGetSubcasts, useAddSubcast, useEditSubcast, useDeleteSubcast,
 } from "../../hooks/useReligionCast";
 
+// ─── Design Tokens (Professional Light Theme) ─────────────────────────────────
+const C = {
+  primary:       "#c026d3",      // Fuchsia - slightly lighter
+  primaryDark:   "#a21caf",
+  primaryLight:  "#fdf4ff",
+  primaryMid:    "#fae8ff",
+  primaryBorder: "#f0abfc",
+  caste:         "#0891b2",      // Cyan - slightly lighter
+  casteBg:       "#ecfeff",
+  casteBorder:   "#a5f3fc",
+  sub:           "#059669",      // Emerald - slightly lighter
+  subBg:         "#ecfdf5",
+  subBorder:     "#a7f3d0",
+  danger:        "#ef4444",
+  dangerBg:      "#fef2f2",
+  dangerBorder:  "#fecaca",
+  textPrimary:   "#1e1b2e",
+  textSecondary: "#5b5266",
+  textMuted:     "#a19aa6",
+  border:        "#f1eef2",
+  surfaceMuted:  "#faf9fb",
+};
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const initials = (name = "") =>
+  name.trim().split(/\s+/).map((w) => w[0]?.toUpperCase() ?? "").slice(0, 2).join("");
+
 // ─── Spinner ──────────────────────────────────────────────────────────────────
-function Spinner({ className = "w-4 h-4" }) {
+function Spinner({ size = 16, color = C.primary }) {
   return (
-    <svg className={`${className} animate-spin`} fill="none" viewBox="0 0 24 24">
-      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className="animate-spin" style={{ color }}>
+      <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+      <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
     </svg>
   );
 }
 
-// ─── Stat Card ────────────────────────────────────────────────────────────────
-function StatCard({ label, value, icon, color }) {
+// ─── Icon Button ──────────────────────────────────────────────────────────────
+function IconBtn({ onClick, disabled, danger, title, children }) {
   return (
-    <div className="group bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-      <div className="flex items-start justify-between">
-        <div className="space-y-2">
-          <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">{label}</p>
-          <p className="text-2xl font-bold text-gray-800">{value}</p>
-        </div>
-        <div className={`w-12 h-12 rounded-2xl ${color} flex items-center justify-center text-2xl transition-all duration-300 group-hover:scale-110`}>
-          {icon}
-        </div>
-      </div>
-    </div>
+    <button
+      onClick={onClick} disabled={disabled} title={title}
+      className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed
+        ${danger
+          ? "text-gray-400 hover:text-red-500 hover:bg-red-50"
+          : "text-gray-400 hover:text-fuchsia-700 hover:bg-fuchsia-50"
+        }`}
+    >
+      {children}
+    </button>
   );
 }
 
-// ─── Generic Name Modal ───────────────────────────────────────────────────────
-function NameModal({ isOpen, onClose, title, subtitle, label, placeholder, existing, fieldKey, onSubmit, isPending }) {
-  const [name, setName] = useState(existing?.[fieldKey] ?? "");
+// ─── Badge ────────────────────────────────────────────────────────────────────
+function Badge({ children, variant = "default", className = "" }) {
+  const variants = {
+    default: "bg-gray-100 text-gray-600",
+    primary: "bg-fuchsia-50 text-fuchsia-700",
+    success: "bg-green-50 text-green-700",
+    cyan: "bg-cyan-50 text-cyan-700",
+    emerald: "bg-emerald-50 text-emerald-700",
+  };
+  return (
+    <span className={`px-2.5 py-1 text-[10px] font-semibold rounded-full tracking-wide ${variants[variant]} ${className}`}>
+      {children}
+    </span>
+  );
+}
+
+// ─── Initials Avatar ──────────────────────────────────────────────────────────
+function Avatar({ name, size = 36, bg = C.primary }) {
+  const letters = initials(name) || "?";
+  return (
+    <span
+      className="rounded-xl flex items-center justify-center font-bold text-white shrink-0 select-none"
+      style={{ width: size, height: size, background: `linear-gradient(135deg, ${bg}, ${bg}cc)`, fontSize: size * 0.36 }}
+    >
+      {letters}
+    </span>
+  );
+}
+
+// ─── Professional Modal Component (Used for ALL adds/edits) ───────────────────
+function Modal({ isOpen, onClose, title, subtitle, label, placeholder, existing, fieldKey, onSubmit, isPending, accent = C.primary }) {
+  const [name, setName] = useState("");
+  const inputRef = useRef(null);
+  const isEdit = !!existing;
+
+  useEffect(() => {
+    if (isOpen) {
+      setName(existing?.[fieldKey] ?? "");
+      setTimeout(() => inputRef.current?.focus(), 80);
+    }
+  }, [isOpen, existing, fieldKey]);
 
   const handleSubmit = () => {
     if (!name.trim()) return;
@@ -46,454 +110,664 @@ function NameModal({ isOpen, onClose, title, subtitle, label, placeholder, exist
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-5 animate-scale-up">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-fuchsia-100 flex items-center justify-center text-lg">
-              {existing ? "✏️" : "➕"}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(30,20,35,0.5)", backdropFilter: "blur(4px)" }}>
+      <div className="bg-white w-full max-w-md rounded-xl shadow-xl overflow-hidden"
+        style={{ animation: "modalIn 0.2s cubic-bezier(0.34,1.56,0.64,1) both" }}>
+        {/* Top accent bar */}
+        <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${accent}, ${accent}88)` }} />
+
+        <div className="p-6 space-y-5">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-3">
+              <Avatar name={existing?.[fieldKey] || label} size={36} bg={accent} />
+              <div>
+                <h2 className="text-base font-semibold tracking-tight" style={{ color: C.textPrimary }}>{title}</h2>
+                {subtitle && <p className="text-xs mt-0.5" style={{ color: C.textMuted }}>{subtitle}</p>}
+              </div>
             </div>
-            <div>
-              <h2 className="text-xl font-bold text-gray-800">{title}</h2>
-              {subtitle && <p className="text-xs text-gray-400">{subtitle}</p>}
-            </div>
+            <button onClick={onClose} className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" />
+              </svg>
+            </button>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition">✕</button>
-        </div>
 
-        <div>
-          <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">{label} *</label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-            placeholder={placeholder}
-            className="mt-1 w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-100"
-          />
-        </div>
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: C.textMuted }}>{label}</label>
+            <input
+              ref={inputRef}
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") handleSubmit(); if (e.key === "Escape") onClose(); }}
+              placeholder={placeholder}
+              className="w-full px-3.5 py-2.5 text-sm rounded-lg outline-none transition-all bg-gray-50 border focus:bg-white"
+              style={{ borderColor: C.border }}
+              onFocus={(e) => { e.target.style.borderColor = accent + "80"; e.target.style.boxShadow = `0 0 0 3px ${accent}18`; }}
+              onBlur={(e) => { e.target.style.borderColor = C.border; e.target.style.boxShadow = ""; }}
+            />
+          </div>
 
-        <div className="flex gap-3 pt-2">
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition">
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={isPending || !name.trim()}
-            className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-fuchsia-600 to-fuchsia-500 hover:shadow-lg transition disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {isPending ? <><Spinner /> Saving...</> : existing ? `Update ${label}` : `Add ${label}`}
-          </button>
+          <div className="flex gap-2.5 pt-1">
+            <button onClick={onClose} className="flex-1 py-2.5 rounded-lg text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors">
+              Cancel
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={isPending || !name.trim()}
+              className="flex-1 py-2.5 rounded-lg text-sm font-medium text-white transition-all flex items-center justify-center gap-2 disabled:opacity-50 hover:shadow-md"
+              style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)` }}
+            >
+              {isPending ? <><Spinner size={14} color="#fff" /><span>Saving…</span></> : <span>{isEdit ? "Update" : "Add"} {label}</span>}
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-// ─── Subcast Item ─────────────────────────────────────────────────────────────
-function SubcastItem({ subcast, casteId }) {
+// ─── Confirm Dialog ───────────────────────────────────────────────────────────
+function ConfirmDialog({ isOpen, onClose, onConfirm, message, isPending }) {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(30,20,35,0.5)", backdropFilter: "blur(4px)" }}>
+      <div className="bg-white w-full max-w-sm rounded-xl shadow-xl overflow-hidden"
+        style={{ animation: "modalIn 0.2s cubic-bezier(0.34,1.56,0.64,1) both" }}>
+        <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${C.danger}, ${C.danger}88)` }} />
+        <div className="p-6 space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: C.dangerBg }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.danger} strokeWidth="2">
+                <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-semibold" style={{ color: C.textPrimary }}>Confirm Delete</p>
+              <p className="text-xs mt-1 leading-relaxed" style={{ color: C.textSecondary }}>{message}</p>
+            </div>
+          </div>
+          <div className="flex gap-2.5">
+            <button onClick={onClose} className="flex-1 py-2.5 rounded-lg text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors">
+              Cancel
+            </button>
+            <button
+              onClick={onConfirm} disabled={isPending}
+              className="flex-1 py-2.5 rounded-lg text-sm font-medium text-white transition-all flex items-center justify-center gap-2 disabled:opacity-50 hover:shadow-md"
+              style={{ background: `linear-gradient(135deg, ${C.danger}, ${C.danger}cc)` }}
+            >
+              {isPending ? <><Spinner size={14} color="#fff" /> Deleting…</> : "Yes, Delete"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Edit SVG ─────────────────────────────────────────────────────────────────
+const EditIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+const TrashIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+    <polyline points="3 6 5 6 21 6" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M19 6l-1 14H6L5 6" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M10 11v6M14 11v6" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+const PlusIcon = ({ size = 11 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+    <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+  </svg>
+);
+const ChevronIcon = ({ open, color = "#94A3B8" }) => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5"
+    className="shrink-0 transition-transform duration-200"
+    style={{ transform: open ? "rotate(90deg)" : "rotate(0deg)" }}>
+    <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+// ─── Sub-Caste Row ────────────────────────────────────────────────────────────
+function SubcastRow({ subcast, casteId, religionName, casteName }) {
   const [showEdit, setShowEdit] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const editMutation = useEditSubcast(casteId);
   const deleteMutation = useDeleteSubcast(casteId);
 
-  const handleDelete = () => {
-    if (!window.confirm(`Delete sub-caste "${subcast.subcaste_name}"?`)) return;
-    deleteMutation.mutate(subcast.id, { onError: (err) => alert(err.message) });
-  };
-
   return (
-    <div className="flex items-center justify-between py-2 pl-4 border-l-2 border-purple-100 ml-4">
-      <div className="flex items-center gap-2">
-        <span className="w-1.5 h-1.5 rounded-full bg-purple-300 shrink-0" />
-        <span className="text-sm text-gray-600">{subcast.subcaste_name}</span>
-        <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-green-100 text-green-700">Active</span>
-      </div>
-      <div className="flex gap-1">
-        <button onClick={() => setShowEdit(true)} className="p-1 text-gray-400 hover:text-fuchsia-600 transition text-xs" title="Edit">✏️</button>
-        <button
-          onClick={handleDelete}
-          disabled={deleteMutation.isPending}
-          className="p-1 text-gray-400 hover:text-red-600 transition disabled:opacity-50 text-xs"
-          title="Delete"
-        >
-          {deleteMutation.isPending ? <Spinner className="w-3 h-3" /> : "🗑️"}
-        </button>
+    <>
+      <div className="group flex items-center justify-between py-2 px-3 rounded-lg hover:bg-emerald-50/30 transition-colors">
+        <div className="flex items-center gap-2.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+          <Avatar name={subcast.subcaste_name} size={26} bg={C.sub} />
+          <span className="text-sm font-medium" style={{ color: C.textPrimary }}>{subcast.subcaste_name}</span>
+          <Badge variant="emerald">Active</Badge>
+        </div>
+        <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+          <IconBtn onClick={() => setShowEdit(true)} title="Edit sub-caste"><EditIcon /></IconBtn>
+          <IconBtn danger onClick={() => setShowConfirm(true)} title="Delete sub-caste"><TrashIcon /></IconBtn>
+        </div>
       </div>
 
-      <NameModal
+      {/* Edit Sub-Caste Modal */}
+      <Modal
         isOpen={showEdit}
         onClose={() => setShowEdit(false)}
         title="Edit Sub-Caste"
+        subtitle={`${religionName} → ${casteName}`}
         label="Sub-Caste Name"
         placeholder="e.g., Deshastha, Karhade"
         existing={subcast}
         fieldKey="subcaste_name"
+        accent={C.sub}
         isPending={editMutation.isPending}
         onSubmit={(subcaste_name, done) =>
           editMutation.mutate(
             { id: subcast.id, subcaste_name },
-            { onSuccess: done, onError: (err) => alert(err.message) }
+            { onSuccess: () => { done(); setShowEdit(false); }, onError: (e) => alert(e.message) }
           )
         }
       />
-    </div>
+
+      {/* Delete Confirmation */}
+      <ConfirmDialog
+        isOpen={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        message={`"${subcast.subcaste_name}" will be permanently removed from ${casteName}.`}
+        isPending={deleteMutation.isPending}
+        onConfirm={() => deleteMutation.mutate(subcast.id, { 
+          onSuccess: () => setShowConfirm(false),
+          onError: (e) => alert(e.message) 
+        })}
+      />
+    </>
   );
 }
 
-// ─── Caste Item (with subcasts accordion) ────────────────────────────────────
-function CasteItem({ caste, religionId }) {
+// ─── Caste Row ────────────────────────────────────────────────────────────────
+function CasteRow({ caste, religionId, religionName }) {
   const [expanded, setExpanded] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [showAddSubcast, setShowAddSubcast] = useState(false);
 
   const editMutation = useEditCaste(religionId);
   const deleteMutation = useDeleteCaste(religionId);
   const addSubcastMutation = useAddSubcast(caste.id);
-
-  const { data: subcasts = [], isLoading: subcastsLoading } = useGetSubcasts(
-    expanded ? caste.id : null
-  );
-
-  const handleDelete = () => {
-    if (!window.confirm(`Delete caste "${caste.caste_name}"?`)) return;
-    deleteMutation.mutate({ id: caste.id }, { onError: (err) => alert(err.message) });
-  };
+  const { data: subcasts = [], isLoading } = useGetSubcasts(expanded ? caste.id : null);
 
   return (
-    <div className="border border-gray-100 rounded-xl overflow-hidden mb-2">
-      {/* Caste header row */}
-      <div
-        className="flex items-center justify-between px-4 py-3 bg-gray-50/60 hover:bg-gray-50 transition cursor-pointer"
-        onClick={() => setExpanded(!expanded)}
-      >
-        <div className="flex items-center gap-2">
-          <span className="text-lg">📿</span>
-          <span className="font-medium text-gray-800 text-sm">{caste.caste_name}</span>
-          <span className="px-1.5 py-0.5 text-[10px] rounded-full bg-green-100 text-green-700">Active</span>
+    <>
+      <div className="rounded-xl border overflow-hidden shadow-sm hover:shadow-md transition-all duration-200" style={{ borderColor: C.border }}>
+        {/* Caste Header */}
+        <div
+          className="group flex items-center gap-3 px-4 py-3 cursor-pointer select-none hover:bg-cyan-50/30 transition-colors"
+          onClick={() => setExpanded(!expanded)}
+        >
+          <ChevronIcon open={expanded} color={expanded ? C.caste : C.textMuted} />
+          <Avatar name={caste.caste_name} size={30} bg={C.caste} />
+          <span className="flex-1 text-sm font-semibold" style={{ color: C.textPrimary }}>{caste.caste_name}</span>
+          {expanded && subcasts.length > 0 && (
+            <Badge variant="cyan">{subcasts.length} sub</Badge>
+          )}
+          <Badge variant="cyan">Active</Badge>
+
+          <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => setShowAddSubcast(true)}
+              className="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded-lg transition"
+              style={{ background: C.primaryLight, color: C.primary }}
+            >
+              <PlusIcon size={9} /> Sub-Caste
+            </button>
+            <IconBtn onClick={() => setShowEdit(true)} title="Edit caste"><EditIcon /></IconBtn>
+            <IconBtn danger onClick={() => setShowConfirm(true)} title="Delete caste"><TrashIcon /></IconBtn>
+          </div>
         </div>
-        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-          <button
-            onClick={() => setShowAddSubcast(true)}
-            className="px-2 py-1 text-xs rounded-lg bg-fuchsia-50 text-fuchsia-600 hover:bg-fuchsia-100 transition font-medium"
-          >
-            + Sub-Caste
-          </button>
-          <button onClick={() => setShowEdit(true)} className="p-1.5 text-gray-400 hover:text-fuchsia-600 transition text-xs">✏️</button>
-          <button
-            onClick={handleDelete}
-            disabled={deleteMutation.isPending}
-            className="p-1.5 text-gray-400 hover:text-red-600 transition disabled:opacity-50"
-          >
-            {deleteMutation.isPending ? <Spinner className="w-3 h-3" /> : "🗑️"}
-          </button>
-          <svg
-            className={`w-4 h-4 text-gray-400 transition-transform ${expanded ? "rotate-180" : ""}`}
-            fill="none" viewBox="0 0 24 24" stroke="currentColor"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </div>
+
+        {/* Sub-Castes List (Expandable) */}
+        {expanded && (
+          <div className="border-t px-4 py-2 space-y-0.5" style={{ borderColor: C.casteBorder, background: C.casteBg }}>
+            {isLoading ? (
+              <div className="flex items-center gap-2 py-3 text-xs" style={{ color: C.textMuted }}>
+                <Spinner size={12} color={C.caste} /> Loading sub-castes…
+              </div>
+            ) : subcasts.length === 0 ? (
+              <p className="text-xs text-center py-3" style={{ color: C.textMuted }}>
+                No sub-castes yet —{" "}
+                <button onClick={() => setShowAddSubcast(true)} className="font-semibold hover:underline" style={{ color: C.primary }}>
+                  add one
+                </button>
+              </p>
+            ) : (
+              subcasts.map((sc) => (
+                <SubcastRow 
+                  key={sc.id} 
+                  subcast={sc} 
+                  casteId={caste.id} 
+                  religionName={religionName}
+                  casteName={caste.caste_name}
+                />
+              ))
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Subcasts list */}
-      {expanded && (
-        <div className="px-4 py-3 bg-white space-y-1">
-          {subcastsLoading ? (
-            <div className="flex items-center gap-2 text-xs text-gray-400 py-2">
-              <Spinner className="w-3 h-3" /> Loading sub-castes...
-            </div>
-          ) : subcasts.length === 0 ? (
-            <p className="text-xs text-gray-400 text-center py-3">
-              No sub-castes yet. Click "+ Sub-Caste" to add one.
-            </p>
-          ) : (
-            subcasts.map((sc) => (
-              <SubcastItem key={sc.id} subcast={sc} casteId={caste.id} />
-            ))
-          )}
-        </div>
-      )}
-
       {/* Edit Caste Modal */}
-      <NameModal
+      <Modal
         isOpen={showEdit}
         onClose={() => setShowEdit(false)}
         title="Edit Caste"
+        subtitle={`Updating caste in ${religionName}`}
         label="Caste Name"
         placeholder="e.g., Brahmin, Rajput"
         existing={caste}
         fieldKey="caste_name"
+        accent={C.caste}
         isPending={editMutation.isPending}
         onSubmit={(caste_name, done) =>
           editMutation.mutate(
             { id: caste.id, caste_name, religion_id: religionId },
-            { onSuccess: done, onError: (err) => alert(err.message) }
+            { onSuccess: () => { done(); setShowEdit(false); }, onError: (e) => alert(e.message) }
           )
         }
       />
 
-      {/* Add Subcast Modal */}
-      <NameModal
+      {/* Add Sub-Caste Modal */}
+      <Modal
         isOpen={showAddSubcast}
         onClose={() => setShowAddSubcast(false)}
-        title="Add Sub-Caste"
-        subtitle={caste.caste_name}
+        title="Add New Sub-Caste"
+        subtitle={`${religionName} → ${caste.caste_name}`}
         label="Sub-Caste Name"
-        placeholder="e.g., Deshastha, Karhade"
+        placeholder="e.g., Deshastha, Karhade, Kulkarni"
         existing={null}
         fieldKey="subcaste_name"
+        accent={C.sub}
         isPending={addSubcastMutation.isPending}
         onSubmit={(subcaste_name, done) =>
           addSubcastMutation.mutate(
             { id: uuidv4().replace(/-/g, ""), subcaste_name, caste_id: caste.id },
-            { onSuccess: done, onError: (err) => alert(err.message) }
+            { onSuccess: () => { done(); setShowAddSubcast(false); }, onError: (e) => alert(e.message) }
           )
         }
       />
-    </div>
+
+      {/* Delete Confirmation */}
+      <ConfirmDialog
+        isOpen={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        message={`"${caste.caste_name}" and all its sub-castes will be permanently removed from ${religionName}.`}
+        isPending={deleteMutation.isPending}
+        onConfirm={() => deleteMutation.mutate(
+          { id: caste.id }, 
+          { onSuccess: () => setShowConfirm(false), onError: (e) => alert(e.message) }
+        )}
+      />
+    </>
   );
 }
 
-// ─── Religion Accordion ───────────────────────────────────────────────────────
-function ReligionAccordion({ religion }) {
+// ─── Religion Card ────────────────────────────────────────────────────────────
+function ReligionCard({ religion, index }) {
   const [expanded, setExpanded] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [showAddCaste, setShowAddCaste] = useState(false);
 
   const editMutation = useEditReligion();
   const deleteMutation = useDeleteReligion();
   const addCasteMutation = useAddCaste(religion.id);
-
-  const { data: castes = [], isLoading: castesLoading } = useGetCastes(
-    expanded ? religion.id : null
-  );
-
-  const handleDelete = () => {
-    if (!window.confirm(`Delete religion "${religion.religion_name}"?`)) return;
-    deleteMutation.mutate(religion.id, { onError: (err) => alert(err.message) });
-  };
+  const { data: castes = [], isLoading } = useGetCastes(expanded ? religion.id : null);
 
   return (
-    <div className="border-b border-gray-100 last:border-0">
-      {/* Religion header row */}
+    <>
       <div
-        className="flex items-center justify-between p-5 hover:bg-gray-50/50 transition cursor-pointer"
-        onClick={() => setExpanded(!expanded)}
+        className="rounded-xl border bg-white overflow-hidden transition-all duration-200 shadow-sm hover:shadow-md"
+        style={{ borderColor: expanded ? C.primaryBorder : C.border }}
       >
-        <div className="flex items-center gap-4">
-          <span className="text-3xl">🕉️</span>
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-semibold text-gray-800 text-lg">{religion.religion_name}</span>
-            <span className="px-2 py-0.5 text-[10px] rounded-full bg-green-100 text-green-700">Active</span>
-            {expanded && castes.length > 0 && (
-              <span className="px-2 py-0.5 text-[10px] rounded-full bg-fuchsia-100 text-fuchsia-600">
-                {castes.length} caste{castes.length !== 1 ? "s" : ""}
+        {/* Religion Header */}
+        <div
+          className="group flex items-center gap-4 px-5 py-4 cursor-pointer select-none transition-colors hover:bg-fuchsia-50/30"
+          onClick={() => setExpanded(!expanded)}
+        >
+          <div
+            className="w-0.5 h-9 rounded-full shrink-0 transition-all duration-300"
+            style={{ background: expanded ? C.primary : C.border }}
+          />
+          <ChevronIcon open={expanded} color={expanded ? C.primary : C.textMuted} />
+          <Avatar name={religion.religion_name} size={38} bg={C.primary} />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span
+                className="text-base font-bold tracking-tight transition-colors"
+                style={{ color: expanded ? C.primary : C.textPrimary }}
+              >
+                {religion.religion_name}
               </span>
-            )}
+              <Badge variant="primary">Active</Badge>
+              {expanded && castes.length > 0 && (
+                <Badge variant="default">{castes.length} caste{castes.length !== 1 ? "s" : ""}</Badge>
+              )}
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => setShowAddCaste(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all hover:shadow-sm"
+              style={{ borderColor: C.primaryBorder, color: C.primary, background: C.primaryLight }}
+            >
+              <PlusIcon size={10} /> Add Caste
+            </button>
+            <IconBtn onClick={() => setShowEdit(true)} title="Edit religion"><EditIcon /></IconBtn>
+            <IconBtn danger onClick={() => setShowConfirm(true)} title="Delete religion"><TrashIcon /></IconBtn>
           </div>
         </div>
-        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-          <button
-            onClick={() => setShowAddCaste(true)}
-            className="px-3 py-1.5 text-sm rounded-xl bg-fuchsia-50 text-fuchsia-600 hover:bg-fuchsia-100 transition font-medium"
-          >
-            + Add Caste
-          </button>
-          <button onClick={() => setShowEdit(true)} className="p-2 text-gray-400 hover:text-fuchsia-600 transition">✏️</button>
-          <button
-            onClick={handleDelete}
-            disabled={deleteMutation.isPending}
-            className="p-2 text-gray-400 hover:text-red-600 transition disabled:opacity-50"
-          >
-            {deleteMutation.isPending ? <Spinner className="w-4 h-4" /> : "🗑️"}
-          </button>
-          <svg
-            className={`w-5 h-5 text-gray-400 transition-transform ${expanded ? "rotate-180" : ""}`}
-            fill="none" viewBox="0 0 24 24" stroke="currentColor"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </div>
+
+        {/* Castes List (Expandable) */}
+        {expanded && (
+          <div className="border-t px-5 py-4 space-y-2.5" style={{ borderColor: C.primaryBorder, background: C.surfaceMuted }}>
+            {isLoading ? (
+              <div className="flex items-center gap-2 py-4 text-sm" style={{ color: C.textMuted }}>
+                <Spinner size={14} color={C.primary} /> Loading castes…
+              </div>
+            ) : castes.length === 0 ? (
+              <div className="text-center py-8 space-y-2">
+                <p className="text-sm" style={{ color: C.textMuted }}>No castes added yet</p>
+                <button
+                  onClick={() => setShowAddCaste(true)}
+                  className="text-xs font-semibold hover:underline"
+                  style={{ color: C.primary }}
+                >
+                  + Add your first caste
+                </button>
+              </div>
+            ) : (
+              castes.map((caste) => (
+                <CasteRow 
+                  key={caste.id} 
+                  caste={caste} 
+                  religionId={religion.id} 
+                  religionName={religion.religion_name}
+                />
+              ))
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Castes list */}
-      {expanded && (
-        <div className="px-5 pb-5">
-          {castesLoading ? (
-            <div className="flex items-center gap-2 text-sm text-gray-400 py-4">
-              <Spinner /> Loading castes...
-            </div>
-          ) : castes.length === 0 ? (
-            <div className="text-center py-8 text-gray-400 text-sm">
-              No castes added yet. Click "+ Add Caste" to create one.
-            </div>
-          ) : (
-            castes.map((caste) => (
-              <CasteItem key={caste.id} caste={caste} religionId={religion.id} />
-            ))
-          )}
-        </div>
-      )}
-
       {/* Edit Religion Modal */}
-      <NameModal
+      <Modal
         isOpen={showEdit}
         onClose={() => setShowEdit(false)}
         title="Edit Religion"
+        subtitle="Update religion name"
         label="Religion Name"
-        placeholder="e.g., Hinduism, Islam"
+        placeholder="e.g., Hinduism, Islam, Buddhism"
         existing={religion}
         fieldKey="religion_name"
+        accent={C.primary}
         isPending={editMutation.isPending}
         onSubmit={(religion_name, done) =>
           editMutation.mutate(
             { id: religion.id, religion_name },
-            { onSuccess: done, onError: (err) => alert(err.message) }
+            { onSuccess: () => { done(); setShowEdit(false); }, onError: (e) => alert(e.message) }
           )
         }
       />
 
       {/* Add Caste Modal */}
-      <NameModal
+      <Modal
         isOpen={showAddCaste}
         onClose={() => setShowAddCaste(false)}
         title="Add New Caste"
-        subtitle={`for ${religion.religion_name}`}
+        subtitle={`Adding to ${religion.religion_name}`}
         label="Caste Name"
-        placeholder="e.g., Brahmin, Rajput"
+        placeholder="e.g., Brahmin, Rajput, Kshatriya"
         existing={null}
         fieldKey="caste_name"
+        accent={C.caste}
         isPending={addCasteMutation.isPending}
         onSubmit={(caste_name, done) =>
           addCasteMutation.mutate(
             { id: uuidv4().replace(/-/g, ""), caste_name, religion_id: religion.id },
-            { onSuccess: done, onError: (err) => alert(err.message) }
+            { onSuccess: () => { done(); setShowAddCaste(false); }, onError: (e) => alert(e.message) }
           )
         }
       />
+
+      {/* Delete Confirmation */}
+      <ConfirmDialog
+        isOpen={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        message={`"${religion.religion_name}" and all its castes/sub-castes will be permanently removed.`}
+        isPending={deleteMutation.isPending}
+        onConfirm={() => deleteMutation.mutate(religion.id, { 
+          onSuccess: () => setShowConfirm(false),
+          onError: (e) => alert(e.message) 
+        })}
+      />
+    </>
+  );
+}
+
+// ─── Skeleton Loader ──────────────────────────────────────────────────────────
+function SkeletonRow() {
+  return (
+    <div className="rounded-xl border border-gray-100 bg-white px-5 py-4 flex items-center gap-4 animate-pulse">
+      <div className="w-0.5 h-9 rounded-full bg-gray-200" />
+      <div className="w-4 h-4 rounded bg-gray-200" />
+      <div className="w-9 h-9 rounded-xl bg-gray-200" />
+      <div className="flex-1 space-y-1.5">
+        <div className="h-4 w-32 bg-gray-200 rounded-lg" />
+      </div>
+      <div className="h-5 w-14 bg-gray-100 rounded-full" />
     </div>
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+// ─── Empty State ──────────────────────────────────────────────────────────────
+function EmptyState({ onAdd, isSearch }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-20 px-8 text-center">
+      <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ background: C.primaryLight }}>
+        <span className="text-3xl">{isSearch ? "🔍" : "🕉️"}</span>
+      </div>
+      <p className="text-base font-semibold mb-1" style={{ color: C.textSecondary }}>
+        {isSearch ? "No results found" : "No religions added yet"}
+      </p>
+      <p className="text-sm mb-5 max-w-xs" style={{ color: C.textMuted }}>
+        {isSearch
+          ? "Try a different search term."
+          : "Start building your community hierarchy."}
+      </p>
+      {!isSearch && (
+        <button
+          onClick={onAdd}
+          className="px-4 py-2 text-sm font-semibold text-white rounded-lg transition-all hover:shadow-md hover:-translate-y-0.5"
+          style={{ background: `linear-gradient(135deg, ${C.primary}, ${C.primaryDark})` }}
+        >
+          + Add First Religion
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function ReligionManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddReligion, setShowAddReligion] = useState(false);
-
-  const { data: religions = [], isLoading, isError, error } = useGetReligions();
   const addReligionMutation = useAddReligion();
+  const { data: religions = [], isLoading, isError, error, refetch } = useGetReligions();
 
   const filtered = religions.filter((r) =>
     r.religion_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen p-6 space-y-6" style={{ background: "#faf9fc" }}>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-fuchsia-500 to-fuchsia-600 flex items-center justify-center shadow-lg">
-            <span className="text-xl">🕉️</span>
+          <div className="w-11 h-11 rounded-xl flex items-center justify-center shadow-sm" style={{ background: `linear-gradient(135deg, ${C.primary}, ${C.primaryDark})` }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8">
+              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" strokeLinecap="round"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">Religion & Community</h1>
-            <p className="text-gray-500 text-sm mt-0.5">Manage religions, castes & sub-castes</p>
+            <h1 className="text-xl font-bold tracking-tight" style={{ color: C.textPrimary }}>Religion & Community</h1>
+            <p className="text-sm mt-0.5" style={{ color: C.textMuted }}>Manage religion → caste → sub-caste hierarchy</p>
           </div>
         </div>
         <button
           onClick={() => setShowAddReligion(true)}
-          className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-fuchsia-600 to-fuchsia-500 hover:shadow-lg transition-all flex items-center gap-2"
+          className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white rounded-lg transition-all hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 shrink-0"
+          style={{ background: `linear-gradient(135deg, ${C.primary}, ${C.primaryDark})` }}
         >
-          <span>➕</span> Add Religion
+          <PlusIcon size={13} /> Add Religion
         </button>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-5">
-        <StatCard label="Total Religions" value={isLoading ? "…" : religions.length} icon="🕉️" color="bg-fuchsia-50" />
-        <StatCard label="Filtered" value={isLoading ? "…" : filtered.length} icon="🔍" color="bg-blue-50" />
-      </div>
-
-      {/* Search */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-        <div className="relative">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          <input
-            type="text"
-            placeholder="Search religions..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl text-sm outline-none focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-100 transition"
-          />
-        </div>
-      </div>
-
-      {/* Hierarchy hint */}
-      <div className="flex items-center gap-4 text-xs text-gray-400 px-1">
-        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-fuchsia-200 inline-block" /> Religion</span>
-        <span>›</span>
-        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-blue-200 inline-block" /> Caste</span>
-        <span>›</span>
-        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-purple-200 inline-block" /> Sub-Caste</span>
-      </div>
-
-      {/* Religion list */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50/50 to-white flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-fuchsia-100 flex items-center justify-center text-sm">📋</div>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="bg-white rounded-xl border p-4 flex items-center gap-3 shadow-sm" style={{ borderColor: C.border }}>
+          <Avatar name="RE" size={38} bg={C.primary} />
           <div>
-            <h2 className="font-semibold text-gray-800">Religion Directory</h2>
-            <p className="text-xs text-gray-400">{filtered.length} religion{filtered.length !== 1 ? "s" : ""} found</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: C.textMuted }}>Religions</p>
+            <p className="text-xl font-bold" style={{ color: C.primary }}>{isLoading ? "—" : religions.length}</p>
           </div>
         </div>
-
-        {isLoading ? (
-          <div className="flex items-center justify-center gap-2 py-16 text-gray-400">
-            <Spinner className="w-5 h-5" /> Loading religions...
+        <div className="bg-white rounded-xl border p-4 flex items-center gap-3 shadow-sm" style={{ borderColor: C.border }}>
+          <Avatar name="CA" size={38} bg={C.caste} />
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: C.textMuted }}>Castes</p>
+            <p className="text-xl font-bold" style={{ color: C.caste }}>
+              {isLoading ? "—" : religions.reduce((acc, r) => acc + (r.castes?.length || 0), 0)}
+            </p>
           </div>
+        </div>
+        <div className="bg-white rounded-xl border p-4 flex items-center gap-3 shadow-sm" style={{ borderColor: C.border }}>
+          <Avatar name="SU" size={38} bg={C.sub} />
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: C.textMuted }}>Sub-Castes</p>
+            <p className="text-xl font-bold" style={{ color: C.sub }}>
+              {isLoading ? "—" : religions.reduce((acc, r) => acc + (r.castes?.reduce((a, c) => a + (c.subcastes?.length || 0), 0) || 0), 0)}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Hierarchy Hint */}
+      <div className="flex items-center gap-2 text-xs">
+        {[
+          { label: "Religion", color: C.primary, bg: C.primaryLight },
+          { label: "Caste", color: C.caste, bg: C.casteBg },
+          { label: "Sub-Caste", color: C.sub, bg: C.subBg },
+        ].map((item, i, arr) => (
+          <div key={item.label} className="flex items-center gap-2">
+            <span className="px-2.5 py-1 rounded-lg font-semibold" style={{ background: item.bg, color: item.color }}>
+              {item.label}
+            </span>
+            {i < arr.length - 1 && (
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#CBD5E1" strokeWidth="2.5">
+                <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            )}
+          </div>
+        ))}
+        <span className="text-xs" style={{ color: C.textMuted }}>— click any row to expand</span>
+      </div>
+
+      {/* Search Bar */}
+      <div className="relative">
+        <svg className="absolute left-3.5 top-1/2 -translate-y-1/2" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={C.textMuted} strokeWidth="2.2">
+          <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" strokeLinecap="round" />
+        </svg>
+        <input
+          type="text"
+          placeholder="Search religions…"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full pl-10 pr-10 py-2.5 text-sm bg-white border rounded-lg outline-none shadow-sm transition-all focus:border-fuchsia-300 focus:ring-2 focus:ring-fuchsia-100"
+          style={{ borderColor: C.border }}
+        />
+        {searchTerm && (
+          <button
+            onClick={() => setSearchTerm("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors"
+          >
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="3">
+              <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" />
+            </svg>
+          </button>
+        )}
+      </div>
+
+      {/* Religions List */}
+      <div className="space-y-2.5">
+        {isLoading ? (
+          Array.from({ length: 3 }).map((_, i) => <SkeletonRow key={i} />)
         ) : isError ? (
-          <div className="py-16 text-center">
-            <p className="font-medium text-red-500">Failed to load religions</p>
-            <p className="text-sm text-gray-400 mt-1">{error?.message}</p>
+          <div className="bg-white rounded-xl border p-8 text-center space-y-3" style={{ borderColor: C.dangerBorder }}>
+            <div className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl mx-auto" style={{ background: C.dangerBg }}>⚠️</div>
+            <p className="font-semibold" style={{ color: C.textSecondary }}>Failed to load religions</p>
+            <p className="text-sm" style={{ color: C.textMuted }}>{error?.message}</p>
+            <button onClick={() => refetch()} className="px-4 py-2 text-sm font-semibold rounded-lg transition" style={{ color: C.primary, background: C.primaryLight }}>
+              Retry
+            </button>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="py-16 text-center">
-            <div className="w-20 h-20 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4 text-4xl">🕉️</div>
-            <p className="font-medium text-gray-500">No religions found</p>
-            <p className="text-sm text-gray-400 mt-1">Try adjusting your search or add a new religion</p>
+          <div className="bg-white rounded-xl border shadow-sm overflow-hidden" style={{ borderColor: C.border }}>
+            <EmptyState onAdd={() => setShowAddReligion(true)} isSearch={!!searchTerm} />
           </div>
         ) : (
-          filtered.map((religion) => (
-            <ReligionAccordion key={religion.id} religion={religion} />
+          filtered.map((religion, i) => (
+            <ReligionCard key={religion.id} religion={religion} index={i} />
           ))
         )}
       </div>
 
       {/* Add Religion Modal */}
-      <NameModal
+      <Modal
         isOpen={showAddReligion}
         onClose={() => setShowAddReligion(false)}
         title="Add New Religion"
+        subtitle="Create a new religious community"
         label="Religion Name"
-        placeholder="e.g., Hinduism, Islam"
+        placeholder="e.g., Hinduism, Islam, Buddhism, Christianity"
         existing={null}
         fieldKey="religion_name"
+        accent={C.primary}
         isPending={addReligionMutation.isPending}
         onSubmit={(religion_name, done) =>
           addReligionMutation.mutate(
             { id: uuidv4().replace(/-/g, ""), religion_name },
-            { onSuccess: done, onError: (err) => alert(err.message) }
+            { onSuccess: () => { done(); setShowAddReligion(false); }, onError: (e) => alert(e.message) }
           )
         }
       />
 
       <style>{`
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes scaleUp { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-        .animate-fade-in { animation: fadeIn 0.2s ease-out forwards; }
-        .animate-scale-up { animation: scaleUp 0.25s ease-out forwards; }
+        @keyframes modalIn {
+          from { opacity: 0; transform: scale(0.96) translateY(10px); }
+          to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        @keyframes rowIn {
+          from { opacity: 0; transform: translateY(8px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
       `}</style>
     </div>
   );

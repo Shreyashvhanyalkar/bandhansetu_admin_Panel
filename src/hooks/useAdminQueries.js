@@ -6,9 +6,14 @@ const BASE_URL = import.meta.env.VITE_BASE_URL;
 const getAuthHeaders = () => ({
   "Content-Type": "application/json",
   Authorization: `Bearer ${localStorage.getItem("token")}`,
+  "x-app-type": "admin",
 });
 
 const USERS_KEY = ["admin", "users"];
+
+// In useAllUsers hook
+
+
 
 export const useAllUsers = (filters = {}) => {
   const {
@@ -17,60 +22,65 @@ export const useAllUsers = (filters = {}) => {
     search = "",
     status,
     deleted,
+    gender,
   } = filters;
 
   return useQuery({
-    queryKey: [...USERS_KEY, { page, limit, search, status, deleted }],
+    queryKey: ["admin", "users", { page, limit, search, status, deleted, gender }], // Clean and reliable key
+
     queryFn: async () => {
-      console.log("API CALLED with filters:", { page, limit, search, status, deleted });
-      
       const params = new URLSearchParams();
       params.set("page", String(page));
       params.set("limit", String(limit));
-      if (search) params.set("search", search);
-      if (status !== undefined && status !== "") params.set("status", String(status));
-      if (deleted !== undefined && deleted !== "") params.set("deleted", String(deleted));
 
-      const url = `${BASE_URL}/admin/users?${params.toString()}`;
-      console.log("Fetching URL:", url);
-      
-      const res = await fetch(url, {
-        headers: getAuthHeaders(),
+      if (search?.trim()) params.set("search", search.trim());
+      if (status !== undefined) params.set("status", String(status));
+      if (deleted !== undefined) params.set("deleted", String(deleted));
+      if (gender) params.set("gender", gender);        // ← This must be sent
+
+      const url = `${BASE_URL}/api/auth/admin/users?${params.toString()}`;
+
+      console.log("Fetching users with gender =", gender, "→ Full URL:", url); // Debugging
+
+      const res = await fetch(url, { 
+        headers: getAuthHeaders() 
       });
 
       if (!res.ok) {
-        const err = await res.json();
+        const err = await res.json().catch(() => ({}));
         throw new Error(err.message || "Failed to fetch users");
       }
 
-      const { data } = await res.json();
-      console.log("API Response:", data);
+      const response = await res.json();
 
-      const users = data.users.map((u) => ({
-  id: u.id,
-  name: `${u.first_name}${u.middle_name ? " " + u.middle_name : ""} ${u.last_name}`.trim(),
-  email: u.email,
-  mobile: String(u.mobile_number),
-  countryCode: u.country_code ?? "+91",
-  status: u.status === 1 ? "approved" : "pending",
-  rawStatus: u.status,
-  isDeleted: u.deleted_at !== null, // Add this line
-  religionId: u.religion_id ?? null,
-  casteId: u.caste_id ?? null,
-  cityId: u.city_id ?? null,
-}));
+      const usersData = response.users || [];
+      const paginationData = response.pagination || null;
+
+      const users = usersData.map((u) => ({
+        id: u.id,
+        name: `${u.first_name || ""} ${u.middle_name || ""} ${u.last_name || ""}`.trim(),
+        email: u.email,
+        mobile: String(u.mobile_number || ""),
+        countryCode: u.country_code || "+91",
+        rawStatus: u.status ?? 0,
+        status: u.status === 1 ? "approved" : "pending",
+        isDeleted: !!u.deleted_at,
+        gender: u.gender || "",
+      }));
 
       return {
         users,
-        pagination: data.pagination,
+        pagination: paginationData || {
+          page,
+          limit,
+          total: users.length,
+          total_pages: Math.ceil(users.length / limit),
+        },
       };
     },
-    staleTime: 0, // Always consider data stale
-    cacheTime: 0, // Don't cache data
+
     keepPreviousData: true,
     refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-    refetchOnMount: true,
   });
 };
 
@@ -79,35 +89,21 @@ export const useToggleUserStatus = () => {
 
   return useMutation({
     mutationFn: async ({ userId, status }) => {
-      console.log("Toggling status for user:", userId, "to status:", status);
-      const res = await fetch(`${BASE_URL}/admin/users/${userId}/status`, {
+      const res = await fetch(`${BASE_URL}/api/auth/admin/users/status/${userId}`, {
         method: "PATCH",
         headers: getAuthHeaders(),
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status }),        // { status: 0 or 1 }
       });
 
       if (!res.ok) {
-        const err = await res.json();
+        const err = await res.json().catch(() => ({}));
         throw new Error(err.message || "Failed to update user status");
       }
 
       return { userId, status };
     },
-
-    onSuccess: ({ userId, status }) => {
-      // Only update cache, don't refetch
-      queryClient.setQueriesData({ queryKey: USERS_KEY, exact: false }, (old) => {
-        if (!old?.users) return old;
-        return {
-          ...old,
-          users: old.users.map((u) =>
-            u.id === userId
-              ? { ...u, rawStatus: status, status: status === 1 ? "approved" : "pending" }
-              : u
-          ),
-        };
-      });
-      console.log("Cache updated, no refetch triggered");
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: USERS_KEY });
     },
   });
 };
@@ -117,33 +113,20 @@ export const useDeleteUser = () => {
 
   return useMutation({
     mutationFn: async (userId) => {
-      console.log("Deleting user:", userId);
-      const res = await fetch(`${BASE_URL}/admin/users/${userId}`, {
+      const res = await fetch(`${BASE_URL}/api/auth/admin/users/${userId}`, {
         method: "DELETE",
         headers: getAuthHeaders(),
       });
 
       if (!res.ok) {
-        const err = await res.json();
+        const err = await res.json().catch(() => ({}));
         throw new Error(err.message || "Failed to delete user");
       }
 
       return userId;
     },
-
-    onSuccess: (userId) => {
-      // Only update cache, don't refetch
-      queryClient.setQueriesData({ queryKey: USERS_KEY, exact: false }, (old) => {
-        if (!old?.users) return old;
-        return {
-          ...old,
-          users: old.users.filter((u) => u.id !== userId),
-          pagination: old.pagination
-            ? { ...old.pagination, total: Math.max(0, old.pagination.total - 1) }
-            : old.pagination,
-        };
-      });
-      console.log("Cache updated after delete, no refetch triggered");
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: USERS_KEY });
     },
   });
 };
@@ -211,33 +194,20 @@ export const useRestoreUser = () => {
 
   return useMutation({
     mutationFn: async (userId) => {
-      console.log("Restoring user:", userId);
-      const res = await fetch(`${BASE_URL}/admin/users/${userId}/restore`, {
+      const res = await fetch(`${BASE_URL}/api/auth/admin/users/restore/${userId}`, {
         method: "PATCH",
         headers: getAuthHeaders(),
       });
 
       if (!res.ok) {
-        const err = await res.json();
+        const err = await res.json().catch(() => ({}));
         throw new Error(err.message || "Failed to restore user");
       }
 
       return userId;
     },
-
-    onSuccess: (userId) => {
-      // Update cache to remove the restored user from deleted list
-      queryClient.setQueriesData({ queryKey: USERS_KEY, exact: false }, (old) => {
-        if (!old?.users) return old;
-        return {
-          ...old,
-          users: old.users.filter((u) => u.id !== userId),
-          pagination: old.pagination
-            ? { ...old.pagination, total: Math.max(0, old.pagination.total - 1) }
-            : old.pagination,
-        };
-      });
-      console.log("Cache updated after restore, no refetch triggered");
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: USERS_KEY });
     },
   });
 };

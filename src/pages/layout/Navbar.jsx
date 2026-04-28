@@ -1,6 +1,5 @@
-// components/admin/Navbar.jsx
 import { useSelector } from "react-redux";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const pageTitles = {
   "/admin/dashboard": "Dashboard",
@@ -19,11 +18,13 @@ const pageTitles = {
   "/admin/notifications/target": "Target Specific Users",
   "/admin/notifications/scheduled": "Scheduled Notifications",
   "/admin/notifications/status": "Read Status",
+  "/admin/profile": "My Profile",
 };
 
 export default function Navbar({ onMenuClick }) {
   const { user } = useSelector((s) => s.auth);
   const location = useLocation();
+  const navigate = useNavigate();
 
   const title =
     pageTitles[location.pathname] ||
@@ -31,6 +32,10 @@ export default function Navbar({ onMenuClick }) {
      location.pathname.startsWith("/admin/notifications") ? "Notifications" :
      location.pathname.startsWith("/admin/requests") ? "User Requests" :
      "Dashboard");
+
+  const handleProfileClick = () => {
+    navigate("/admin/profile");
+  };
 
   return (
     <header className="bg-white border-b border-gray-100 px-4 sm:px-6 py-3 flex items-center justify-between gap-4 sticky top-0 z-30 shadow-sm">
@@ -46,9 +51,6 @@ export default function Navbar({ onMenuClick }) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
-
-        {/* GOGO Logo */}
-       
 
         {/* Page Title */}
         <div className="hidden sm:block pl-6 border-l border-gray-200">
@@ -84,10 +86,11 @@ export default function Navbar({ onMenuClick }) {
           </svg>
         </button>
 
-        
-
-        {/* User Profile */}
-        <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
+        {/* User Profile - Made clickable */}
+        <div 
+          className="flex items-center gap-3 pl-4 border-l border-gray-200 cursor-pointer hover:opacity-80 transition-opacity"
+          onClick={handleProfileClick}
+        >
           <div className="text-right hidden sm:block">
             <p className="text-sm font-semibold text-gray-800 leading-none">{user?.name || "Admin"}</p>
             <p className="text-xs text-gray-400">Administrator</p>
@@ -96,7 +99,7 @@ export default function Navbar({ onMenuClick }) {
           <div className="w-9 h-9 rounded-2xl overflow-hidden ring-2 ring-purple-100">
             <img
               src="https://i.pravatar.cc/128?u=laura" 
-              alt="Laura Ellis"
+              alt="Profile"
               className="w-full h-full object-cover"
             />
           </div>

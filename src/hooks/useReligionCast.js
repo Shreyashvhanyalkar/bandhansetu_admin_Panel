@@ -1,19 +1,20 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
-const BASE_URL = "http://bandhan-setu-prod.eba-am6hwsad.ap-south-1.elasticbeanstalk.com";
-
+const BASE_URL = import.meta.env.VITE_BASE_URL;
 // ─── Helper ───────────────────────────────────────────────────────────────────
-const getAuthHeaders = () => {
-  const token = localStorage.getItem("token");
-  return {
-    "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-};
+const getAuthHeaders = () => ({
+  "Content-Type": "application/json",
+  Authorization: `Bearer ${localStorage.getItem("token")}`,
+  "x-app-type": "admin",        // ← Add this line
+});
 
 const handleResponse = async (res) => {
   const json = await res.json();
-  if (!json.status) throw new Error(json.message || "Something went wrong.");
+  
+  if (!res.ok || json.status === false) {
+    throw new Error(json.message || "Something went wrong");
+  }
+  
   return json;
 };
 
@@ -29,12 +30,30 @@ export const RELIGION_KEYS = {
 // ══════════════════════════════════════════════════════════════════════════════
 
 const fetchReligions = async () => {
-  const res = await fetch(`${BASE_URL}/admin/religion`, {
+  const res = await fetch(`${BASE_URL}/api/auth/admin/religion`, {
     method: "GET",
     headers: getAuthHeaders(),
   });
   const json = await handleResponse(res);
-  return json.data.religions;
+  
+  console.log("Religions API response:", json);
+  
+  // Handle different response structures
+  if (json.religions && Array.isArray(json.religions)) {
+    return json.religions;
+  }
+  if (json.data?.religions && Array.isArray(json.data.religions)) {
+    return json.data.religions;
+  }
+  if (Array.isArray(json)) {
+    return json;
+  }
+  if (json.data && Array.isArray(json.data)) {
+    return json.data;
+  }
+  
+  console.warn("Unexpected religions response structure:", json);
+  return [];
 };
 
 export const useGetReligions = () =>
@@ -45,7 +64,7 @@ export const useGetReligions = () =>
   });
 
 const addReligion = async ({ id, religion_name }) => {
-  const res = await fetch(`${BASE_URL}/admin/religion`, {
+  const res = await fetch(`${BASE_URL}/api/auth/admin/religion`, {
     method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify({ id, religion_name }),
@@ -62,7 +81,7 @@ export const useAddReligion = () => {
 };
 
 const editReligion = async ({ id, religion_name }) => {
-  const res = await fetch(`${BASE_URL}/admin/religion/${id}`, {
+  const res = await fetch(`${BASE_URL}/api/auth/admin/religion/${id}`, {
     method: "PUT",
     headers: getAuthHeaders(),
     body: JSON.stringify({ religion_name }),
@@ -79,7 +98,7 @@ export const useEditReligion = () => {
 };
 
 const deleteReligion = async (id) => {
-  const res = await fetch(`${BASE_URL}/admin/religion/${id}`, {
+  const res = await fetch(`${BASE_URL}/api/auth/admin/religion/${id}`, {
     method: "DELETE",
     headers: getAuthHeaders(),
   });
@@ -100,12 +119,29 @@ export const useDeleteReligion = () => {
 
 const fetchCastesByReligion = async (religionId) => {
   if (!religionId) return [];
-  const res = await fetch(`${BASE_URL}/admin/caste?religion_id=${religionId}`, {
+  const res = await fetch(`${BASE_URL}/api/auth/admin/caste?religion_id=${religionId}`, {
     method: "GET",
     headers: getAuthHeaders(),
   });
   const json = await handleResponse(res);
-  return json.data.castes;
+  
+  console.log(`Castes for religion ${religionId}:`, json);
+  
+  // Handle different response structures
+  if (json.castes && Array.isArray(json.castes)) {
+    return json.castes;
+  }
+  if (json.data?.castes && Array.isArray(json.data.castes)) {
+    return json.data.castes;
+  }
+  if (Array.isArray(json)) {
+    return json;
+  }
+  if (json.data && Array.isArray(json.data)) {
+    return json.data;
+  }
+  
+  return [];
 };
 
 export const useGetCastes = (religionId) =>
@@ -117,7 +153,7 @@ export const useGetCastes = (religionId) =>
   });
 
 const addCaste = async ({ id, caste_name, religion_id }) => {
-  const res = await fetch(`${BASE_URL}/admin/caste`, {
+  const res = await fetch(`${BASE_URL}/api/auth/admin/caste`, {
     method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify({ id, caste_name, religion_id }),
@@ -135,7 +171,7 @@ export const useAddCaste = (religionId) => {
 };
 
 const editCaste = async ({ id, caste_name, religion_id }) => {
-  const res = await fetch(`${BASE_URL}/admin/caste/${id}`, {
+  const res = await fetch(`${BASE_URL}/api/auth/admin/caste/${id}`, {
     method: "PUT",
     headers: getAuthHeaders(),
     body: JSON.stringify({ caste_name, religion_id }),
@@ -153,7 +189,7 @@ export const useEditCaste = (religionId) => {
 };
 
 const deleteCaste = async ({ id }) => {
-  const res = await fetch(`${BASE_URL}/admin/caste/${id}`, {
+  const res = await fetch(`${BASE_URL}/api/auth/admin/caste/${id}`, {
     method: "DELETE",
     headers: getAuthHeaders(),
   });
@@ -173,15 +209,31 @@ export const useDeleteCaste = (religionId) => {
 //  SUBCAST APIs
 // ══════════════════════════════════════════════════════════════════════════════
 
-// ── Fetch subcasts by caste ───────────────────────────────────────────────────
 const fetchSubcastsByCaste = async (casteId) => {
   if (!casteId) return [];
-  const res = await fetch(`${BASE_URL}/admin/subcast?caste_id=${casteId}`, {
+  const res = await fetch(`${BASE_URL}/api/auth/admin/subcast?caste_id=${casteId}`, {
     method: "GET",
     headers: getAuthHeaders(),
   });
   const json = await handleResponse(res);
-  return json.data.subcasts; // [{ id, subcaste_name, caste_id }]
+  
+  console.log(`Subcasts for caste ${casteId}:`, json);
+  
+  // Handle different response structures
+  if (json.subcasts && Array.isArray(json.subcasts)) {
+    return json.subcasts;
+  }
+  if (json.data?.subcasts && Array.isArray(json.data.subcasts)) {
+    return json.data.subcasts;
+  }
+  if (Array.isArray(json)) {
+    return json;
+  }
+  if (json.data && Array.isArray(json.data)) {
+    return json.data;
+  }
+  
+  return [];
 };
 
 export const useGetSubcasts = (casteId) =>
@@ -192,9 +244,8 @@ export const useGetSubcasts = (casteId) =>
     staleTime: 5 * 60 * 1000,
   });
 
-// ── Add subcast ───────────────────────────────────────────────────────────────
 const addSubcast = async ({ id, subcaste_name, caste_id }) => {
-  const res = await fetch(`${BASE_URL}/admin/subcast`, {
+  const res = await fetch(`${BASE_URL}/api/auth/admin/subcast`, {
     method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify({ id, subcaste_name, caste_id }),
@@ -211,9 +262,8 @@ export const useAddSubcast = (casteId) => {
   });
 };
 
-// ── Edit subcast ──────────────────────────────────────────────────────────────
 const editSubcast = async ({ id, subcaste_name }) => {
-  const res = await fetch(`${BASE_URL}/admin/subcast/${id}`, {
+  const res = await fetch(`${BASE_URL}/api/auth/admin/subcast/${id}`, {
     method: "PUT",
     headers: getAuthHeaders(),
     body: JSON.stringify({ subcaste_name }),
@@ -230,9 +280,8 @@ export const useEditSubcast = (casteId) => {
   });
 };
 
-// ── Delete subcast ────────────────────────────────────────────────────────────
 const deleteSubcast = async (id) => {
-  const res = await fetch(`${BASE_URL}/admin/subcast/${id}`, {
+  const res = await fetch(`${BASE_URL}/api/auth/admin/subcast/${id}`, {
     method: "DELETE",
     headers: getAuthHeaders(),
   });

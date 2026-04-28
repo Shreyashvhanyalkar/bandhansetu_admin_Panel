@@ -47,10 +47,11 @@ const RECENT_ACTIVITIES = [
 ];
 
 const COLOR = {
-  primary: "#C026D3",
+  primary:       "#e990e8",      // Slightly lighter than original #a21caf
+  primaryDark:   "#da0eed", 
   primaryHover: "#a21caf",
   primaryBg: "#fdf4ff",
-  primaryText: "#86198f",
+  primaryText: "#bd57c6",
   primaryLight: "#e879f9",
   green: "#639922",
   greenBg: "#EAF3DE",

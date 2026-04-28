@@ -9,6 +9,9 @@ import ApproveReject from "./pages/admin/AproveReject";
 import Reports from "./pages/admin/Reports";
 import Notifications from "./pages/admin/Notifications";
 import ReligionManagement from "./pages/admin/ReligionManagement";
+import SubAdminManagement from "./pages/admin/SubAdminManagement";
+import AdminProfile from './pages/admin/profile';
+import LocationManagement from "./pages/admin/LocationManagement";
 export default function App() {
   const { isAuthenticated } = useSelector((state) => state.auth);
 
@@ -32,7 +35,10 @@ export default function App() {
   <Route path="dashboard" element={<Dashboard />} />
   <Route path="/admin/religion/*" element={<ReligionManagement />} />
   <Route path="requests" element={<ApproveReject />} />
+  <Route path="locations" element={<LocationManagement />} />
   <Route path="religion" element={<ReligionManagement />} />
+  <Route path="sub-admins" element={<SubAdminManagement />} />
+  <Route path="/admin/profile" element={<AdminProfile />} />
 
   {/* ✅ FIXED */}
   <Route path="reports/*" element={<Reports />} />

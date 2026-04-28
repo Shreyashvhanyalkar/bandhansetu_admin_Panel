@@ -19,6 +19,22 @@ const NAV_ITEMS = [
       { label: "Performance", to: "/admin/dashboard/performance" },
     ],
   },
+  
+
+
+  {
+    label: "Management & Moderation",
+    icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+      </svg>
+    ),
+    children: [
+      { label: "User Management", to: "/admin/requests" },
+      { label: "Location Management", to: "/admin/locations" },
+    ],
+  },
+
   {
     label: "Religion & Community",
     to: "/admin/religion",
@@ -31,17 +47,20 @@ const NAV_ITEMS = [
       </svg>
     ),
   },
+
   {
-    label: "User Requests",
+    label: "Sub Admin Management",
+    to: "/admin/sub-admins",
     icon: (
       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M17 21v-4H7v4" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 7v6" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 10h6" />
       </svg>
     ),
-    children: [
-      { label: "User Management", to: "/admin/requests" },
-    ],
   },
+  
   {
     label: "Reports & Moderation",
     icon: (

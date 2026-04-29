@@ -12,6 +12,10 @@ import ReligionManagement from "./pages/admin/ReligionManagement";
 import SubAdminManagement from "./pages/admin/SubAdminManagement";
 import AdminProfile from './pages/admin/profile';
 import LocationManagement from "./pages/admin/LocationManagement";
+import MaritalStatusManagement from "./pages/admin/MaritalStatusManagement"; // Add this import
+import EducationManagement from "./pages/admin/EducationManagement"; // Add this import
+import IncomeManagement from "./pages/admin/IncomeManagement"; // Add this import
+
 export default function App() {
   const { isAuthenticated } = useSelector((state) => state.auth);
 
@@ -36,10 +40,12 @@ export default function App() {
   <Route path="/admin/religion/*" element={<ReligionManagement />} />
   <Route path="requests" element={<ApproveReject />} />
   <Route path="locations" element={<LocationManagement />} />
+  <Route path="marital-status" element={<MaritalStatusManagement />} />
   <Route path="religion" element={<ReligionManagement />} />
   <Route path="sub-admins" element={<SubAdminManagement />} />
   <Route path="/admin/profile" element={<AdminProfile />} />
-
+  <Route path="education" element={<EducationManagement />} />
+  <Route path="income" element={<IncomeManagement />} />
   {/* ✅ FIXED */}
   <Route path="reports/*" element={<Reports />} />
 <Route path="notifications/*" element={<Notifications />} />

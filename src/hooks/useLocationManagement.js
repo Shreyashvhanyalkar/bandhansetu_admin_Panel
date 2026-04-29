@@ -105,7 +105,7 @@ export const useAddState = () => {
       });
       return handleResponse(res);
     },
-    onSuccess: (_, { country_id }) => 
+    onSuccess: (_, { country_id }) =>
       queryClient.invalidateQueries({ queryKey: LOCATION_KEYS.states(country_id) }),
   });
 };
@@ -121,7 +121,10 @@ export const useEditState = () => {
       });
       return handleResponse(res);
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: LOCATION_KEYS.states() }),
+    // FIX: Use prefix key ["locations", "states"] with exact:false to match all
+    // cached state queries like ["locations", "states", 1], ["locations", "states", 2], etc.
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["locations", "states"], exact: false }),
   });
 };
 
@@ -135,7 +138,9 @@ export const useDeleteState = () => {
       });
       return handleResponse(res);
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: LOCATION_KEYS.states() }),
+    // FIX: Same prefix invalidation as useEditState
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["locations", "states"], exact: false }),
   });
 };
 
@@ -166,15 +171,13 @@ export const useAddCity = () => {
       });
       return handleResponse(res);
     },
-    onSuccess: (_, { state_id }) => 
+    onSuccess: (_, { state_id }) =>
       queryClient.invalidateQueries({ queryKey: LOCATION_KEYS.cities(state_id) }),
   });
 };
 
-// Improved useEditCity with optimistic update
 export const useEditCity = () => {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async ({ id, city_name }) => {
       const res = await fetch(`${BASE_URL}/api/auth/admin/city/${id}`, {
@@ -184,15 +187,9 @@ export const useEditCity = () => {
       });
       return handleResponse(res);
     },
-    onSuccess: (_, { id, city_name }) => {
-      // Optimistic update + invalidate for safety
-      queryClient.setQueriesData({ queryKey: LOCATION_KEYS.cities() }, (oldData = []) => {
-        return oldData.map(city => 
-          city.id === id ? { ...city, city_name } : city
-        );
-      });
-      queryClient.invalidateQueries({ queryKey: LOCATION_KEYS.cities() });
-    },
+    // FIX: Drop the broken setQueriesData + use prefix invalidation
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["locations", "cities"], exact: false }),
   });
 };
 
@@ -206,8 +203,8 @@ export const useDeleteCity = () => {
       });
       return handleResponse(res);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: LOCATION_KEYS.cities() });
-    },
+    // FIX: Same prefix invalidation as useEditCity
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["locations", "cities"], exact: false }),
   });
 };

@@ -32,6 +32,9 @@ const NAV_ITEMS = [
     children: [
       { label: "User Management", to: "/admin/requests" },
       { label: "Location Management", to: "/admin/locations" },
+      {label: "Marital Status Management", to: "/admin/marital-status" },
+      { label: "Education Management", to: "/admin/education" },
+      { label: "Income Management", to: "/admin/income" },
     ],
   },
 

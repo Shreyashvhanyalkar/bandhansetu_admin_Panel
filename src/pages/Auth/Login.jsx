@@ -111,9 +111,9 @@ export default function Login() {
                 type="submit"
                 disabled={loginMutation.isPending}
                 className="w-full text-white font-semibold py-2.5 rounded-lg transition-all duration-150 active:scale-[0.98] mt-2 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
-                style={{ background: "#de70e0" }}
-                onMouseEnter={e => { if (!loginMutation.isPending) e.target.style.background = "#d76fd0"; }}
-                onMouseLeave={e => { if (!loginMutation.isPending) e.target.style.background = "#e952ca"; }}
+                style={{ background: "#8B0000" }}
+                onMouseEnter={e => { if (!loginMutation.isPending) e.target.style.background = "#8B0000"; }}
+                onMouseLeave={e => { if (!loginMutation.isPending) e.target.style.background = "#8B0000"; }}
               >
                 {loginMutation.isPending && (
                   <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">

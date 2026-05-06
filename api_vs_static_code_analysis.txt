@@ -1,0 +1,20 @@
+BandhanSetuAdmin: Dynamic API Call Tasks
+-------------------------------------------------------------------
+
+The following are the dynamic tasks currently active in the codebase that rely on API integration 
+
+- [ ] Login Task : Uses API to authenticate the user.
+- [ ] Approve/Reject Users Task: Uses API to fetch all users and update their statuses.
+- [ ] Currency Management Task: Uses API to manage currency data.
+- [ ] Education Management Task: Uses API to manage education options.
+- [ ] Location Management Task: Uses API to manage country/location data.
+- [ ] Religion & Caste Management Task: Uses API to manage religion and caste data.
+- [ ] when i click on user in user management the user information 
+      dynamic other is static.
+
+The following are the static tasks currently active in the codebase 
+- [ ] Dashboard Task : Displays static dashboard data.
+- [ ] Reports Task : Displays static reports data.
+- [ ] Notifications Task : Displays static notifications data.
+- [ ] Sub Admin Management Task : Displays static sub admin data.
+- [ ] Admin Profile  : Displays static admin profile data.

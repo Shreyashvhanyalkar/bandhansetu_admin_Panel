@@ -1,5 +1,8 @@
 // pages/admin/ApproveReject.jsx
+// pages/admin/ApproveReject.jsx
 import { useState, useCallback, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";     // ← ADD THIS LINE
+
 import {
   useAllUsers,
   useToggleUserStatus,
@@ -527,6 +530,7 @@ function UserDetailModal({
   onDelete,
   onRestore,
   onResetPassword,
+  onViewFullProfile,
   togglePending,
   deletePending,
   restorePending,
@@ -673,9 +677,11 @@ function UserDetailModal({
                   <div className="space-y-2">
                     {[
                       { label: "Full Name", value: user.name },
+                      { label: "Platform ID", value: user.platformId, mono: true },
+                      { label: "Gender", value: user.gender || "—" },
                       { label: "Email Address", value: user.email },
                       { label: "Mobile Number", value: `${user.countryCode} ${user.mobile}` },
-                      { label: "User ID", value: user.id, mono: true },
+                      // { label: "User ID", value: user.id, mono: true },
                     ].map(({ label, value, mono }) => (
                       <div key={label} className="flex items-start justify-between gap-4 py-2 border-b border-gray-100 last:border-0">
                         <span className="text-xs font-medium text-gray-500">{label}</span>
@@ -687,6 +693,19 @@ function UserDetailModal({
 
                 {/* Action buttons */}
                 <div className="flex gap-3 pt-2">
+
+                  <button
+                    onClick={() => onViewFullProfile(user.id)}           // ← Updated
+                    className="flex-1 py-2.5 rounded-xl text-sm font-semibold border flex items-center justify-center gap-2 transition hover:scale-105"
+                    style={{ borderColor: C.infoBorder, color: C.info, background: C.infoBg }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path d="M2.458 12C3.732 7.943 7.523 5 12 5 16.477 5 20.268 7.943 21.542 12 20.268 16.057 16.477 19 12 19 7.523 19 3.732 16.057 2.458 12z" />
+                    </svg>
+                    View Full Profile
+                  </button>
+
                   <button onClick={() => fileInputRef.current?.click()}
                     className="flex-1 py-2.5 rounded-xl text-sm font-semibold border flex items-center justify-center gap-2 transition hover:scale-105"
                     style={{ borderColor: C.primaryBorder, color: C.primary, background: C.primaryLight }}>
@@ -883,6 +902,7 @@ function UserDetailModal({
 // MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════════════════════════
 export default function ApproveReject() {
+  const navigate = useNavigate();
   const [filters, setFilters] = useState({ page: 1, limit: 10, search: "", status: undefined, deleted: undefined, gender: undefined });
   const [searchInput, setSearchInput] = useState("");
   const [selected, setSelected] = useState(null);
@@ -915,6 +935,11 @@ export default function ApproveReject() {
     setFilters((f) => ({ ...f, ...partial, page: 1 }));
     setSelected(null);
   }, []);
+
+  const handleViewFullProfile = (userId) => {
+    console.log("Navigating with userId:", userId);  // add this
+    navigate(`/admin/profile/${userId}`);
+  };
 
   // ─── Filter Panel ─────────────────────────────────────────────────────────────
   function FilterPanel({ filters, onChange, onClear, isOpen }) {
@@ -967,7 +992,7 @@ export default function ApproveReject() {
           </div>
 
           {/* Gender Filter - FIXED */}
-          <div>
+          {/* <div>
             <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-2">Gender</p>
             <div className="flex gap-2">
               {[
@@ -987,7 +1012,7 @@ export default function ApproveReject() {
                 </button>
               ))}
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     );
@@ -1244,6 +1269,7 @@ export default function ApproveReject() {
           onDelete={() => { setSelected(null); setDeleteTarget(selected); }}
           onRestore={() => { setSelected(null); setRestoreTarget(selected); }}
           onResetPassword={handleResetPassword}
+          onViewFullProfile={handleViewFullProfile}     // ← THIS WAS MISSING
           togglePending={toggleMutation.isPending && toggleMutation.variables?.userId === selected.id}
           deletePending={deleteMutation.isPending && deleteMutation.variables === selected.id}
           restorePending={restoreMutation.isPending && restoreMutation.variables === selected.id}

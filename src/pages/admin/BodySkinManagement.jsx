@@ -1,11 +1,16 @@
-// // src/pages/admin/IncomeManagement.jsx
+// // src/pages/admin/BodySkinManagement.jsx
 // import { useState, useEffect } from "react";
 // import {
-//   useGetIncomes,
-//   useAddIncome,
-//   useEditIncome,
-//   useDeleteIncome,
-// } from "../../hooks/useIncomeManagement";
+//   useGetBodyTypes,
+//   useAddBodyType,
+//   useEditBodyType,
+//   useDeleteBodyType,
+//   useGetSkinTones,
+//   useAddSkinTone,
+//   useEditSkinTone,
+//   useDeleteSkinTone,
+// } from "../../hooks/useBodySkinManagement";
+
 // const C = {
 //   primary: "#c026d3",
 //   primaryDark: "#a21caf",
@@ -18,11 +23,17 @@
 //   border: "#f1eef2",
 //   bg: "#faf9fc",
 // };
+
+// const TABS = [
+//   { key: "body", label: "Body Types", badge: "Body Type" },
+//   { key: "skin", label: "Skin Tones", badge: "Skin Tone" },
+// ];
+
 // // ─── Icons ────────────────────────────────────────────────────────────────────
 // function Spinner({ size = 16, color = C.primary }) {
 //   return (
 //     <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
-//       style={{ color, animation: "inc-spin 0.8s linear infinite", flexShrink: 0 }}>
+//       style={{ color, animation: "bs-spin 0.8s linear infinite", flexShrink: 0 }}>
 //       <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" opacity="0.2" />
 //       <path fill="currentColor" opacity="0.9" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
 //     </svg>
@@ -67,16 +78,14 @@
 //   </svg>
 // );
 
-// // ─── Modal (income_label + sort_order) ───────────────────────────────────────
-// function Modal({ isOpen, onClose, title, existing, onSubmit, isPending }) {
-//   const [label, setLabel] = useState("");
-//   const [sortOrder, setSortOrder] = useState("");
+// // ─── Modal ────────────────────────────────────────────────────────────────────
+// function Modal({ isOpen, onClose, title, placeholder, existingName, onSubmit, isPending }) {
+//   const [name, setName] = useState("");
 //   const [error, setError] = useState("");
 
 //   useEffect(() => {
 //     if (isOpen) {
-//       setLabel(existing?.income_label || "");
-//       setSortOrder(existing?.sort_order !== undefined ? String(existing.sort_order) : "");
+//       setName(existingName || "");
 //       setError("");
 //     }
 //   }, [isOpen]);
@@ -84,17 +93,9 @@
 //   if (!isOpen) return null;
 
 //   const handleSubmit = () => {
-//     if (!label.trim()) { setError("Income label is required."); return; }
-//     if (sortOrder === "" || isNaN(Number(sortOrder))) { setError("Sort order must be a valid number."); return; }
-//     onSubmit({ income_label: label.trim(), sort_order: Number(sortOrder) });
+//     if (!name.trim()) { setError("This field is required."); return; }
+//     onSubmit(name.trim());
 //   };
-
-//   const inputStyle = (focused) => ({
-//     width: "100%", padding: "11px 14px", fontSize: 14, boxSizing: "border-box",
-//     border: `1.5px solid ${error ? C.danger : C.border}`, borderRadius: 10,
-//     outline: "none", color: C.textPrimary, background: "#fafafa",
-//     transition: "border-color 0.15s",
-//   });
 
 //   return (
 //     <div style={{
@@ -110,60 +111,38 @@
 //         <div style={{ height: 4, background: C.primary }} />
 //         <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
 //           <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.textPrimary }}>{title}</h2>
-
-//           {/* Income Label */}
-//           <div>
-//             <label style={{ fontSize: 12, fontWeight: 600, color: C.textSecondary, display: "block", marginBottom: 6 }}>
-//               Income Label
-//             </label>
-//             <input
-//               type="text"
-//               value={label}
-//               onChange={(e) => { setLabel(e.target.value); setError(""); }}
-//               onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-//               placeholder="e.g. 2 - 4 Lakh"
-//               autoFocus
-//               style={inputStyle()}
-//               onFocus={(e) => (e.target.style.borderColor = C.primary)}
-//               onBlur={(e) => (e.target.style.borderColor = error ? C.danger : C.border)}
-//             />
-//           </div>
-
-//           {/* Sort Order */}
-//           <div>
-//             <label style={{ fontSize: 12, fontWeight: 600, color: C.textSecondary, display: "block", marginBottom: 6 }}>
-//               Sort Order
-//             </label>
-//             <input
-//               type="number"
-//               value={sortOrder}
-//               onChange={(e) => { setSortOrder(e.target.value); setError(""); }}
-//               onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-//               placeholder="e.g. 3"
-//               min="1"
-//               style={inputStyle()}
-//               onFocus={(e) => (e.target.style.borderColor = C.primary)}
-//               onBlur={(e) => (e.target.style.borderColor = error ? C.danger : C.border)}
-//             />
-//           </div>
-
+//           <input
+//             type="text"
+//             value={name}
+//             onChange={(e) => { setName(e.target.value); setError(""); }}
+//             onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+//             placeholder={placeholder}
+//             autoFocus
+//             style={{
+//               width: "100%", padding: "11px 14px", fontSize: 14, boxSizing: "border-box",
+//               border: `1.5px solid ${error ? C.danger : C.border}`, borderRadius: 10,
+//               outline: "none", color: C.textPrimary, background: "#fafafa",
+//               transition: "border-color 0.15s",
+//             }}
+//             onFocus={(e) => (e.target.style.borderColor = C.primary)}
+//             onBlur={(e) => (e.target.style.borderColor = error ? C.danger : C.border)}
+//           />
 //           {error && <p style={{ margin: 0, fontSize: 12, color: C.danger }}>{error}</p>}
-
 //           <div style={{ display: "flex", gap: 10 }}>
 //             <button onClick={onClose} style={{
 //               flex: 1, padding: "11px 0", borderRadius: 10,
 //               border: `1.5px solid ${C.border}`, background: "#fff",
 //               color: C.textSecondary, fontSize: 14, fontWeight: 600, cursor: "pointer",
 //             }}>Cancel</button>
-//             <button onClick={handleSubmit} disabled={isPending || !label.trim()} style={{
+//             <button onClick={handleSubmit} disabled={isPending || !name.trim()} style={{
 //               flex: 1, padding: "11px 0", borderRadius: 10, border: "none",
-//               background: isPending || !label.trim() ? `${C.primary}70` : C.primary,
+//               background: isPending || !name.trim() ? `${C.primary}70` : C.primary,
 //               color: "#fff", fontSize: 14, fontWeight: 600,
-//               cursor: isPending || !label.trim() ? "not-allowed" : "pointer",
+//               cursor: isPending || !name.trim() ? "not-allowed" : "pointer",
 //               display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
 //             }}>
 //               {isPending && <Spinner size={15} color="#fff" />}
-//               {isPending ? "Saving…" : existing ? "Update" : "Add"}
+//               {isPending ? "Saving…" : existingName ? "Update" : "Add"}
 //             </button>
 //           </div>
 //         </div>
@@ -207,98 +186,151 @@
 //   );
 // }
 
-// // ─── Income Row ───────────────────────────────────────────────────────────────
-// function IncomeRow({ income, onEdit, onDelete }) {
+// // ─── Generic Item Row ─────────────────────────────────────────────────────────
+// function ItemRow({ label, badge, rowClass, onEdit, onDelete }) {
 //   return (
-//     <div className="inc-row" style={{
+//     <div className={rowClass} style={{
 //       display: "flex", alignItems: "center", gap: 14,
 //       padding: "13px 18px", background: "#fff",
 //       border: `1.5px solid ${C.border}`, borderRadius: 12,
 //       boxShadow: "0 1px 3px rgba(0,0,0,0.04)", transition: "all 0.15s",
 //     }}
-//       onMouseEnter={(e) => {
-//         e.currentTarget.style.borderColor = C.primaryBorder;
-//         e.currentTarget.style.background = C.primaryLight;
-//       }}
-//       onMouseLeave={(e) => {
-//         e.currentTarget.style.borderColor = C.border;
-//         e.currentTarget.style.background = "#fff";
-//       }}
+//       onMouseEnter={(e) => { e.currentTarget.style.borderColor = C.primaryBorder; e.currentTarget.style.background = C.primaryLight; }}
+//       onMouseLeave={(e) => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.background = "#fff"; }}
 //     >
-//       {/* Sort Order Badge */}
-//       <span style={{
-//         width: 32, height: 32, borderRadius: 9, flexShrink: 0,
-//         background: C.primaryLight, border: `1.5px solid ${C.primaryBorder}`,
-//         display: "flex", alignItems: "center", justifyContent: "center",
-//         fontSize: 11, fontWeight: 700, color: C.primary,
-//       }}>
-//         {String(income.sort_order).padStart(2, "0")}
-//       </span>
-
-//       {/* Label */}
 //       <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: C.textPrimary }}>
-//         {income.income_label}
+//         {label}
 //       </span>
-
-//       {/* Badge */}
-//       <span className="inc-badge" style={{
+//       <span className={`${rowClass}-badge`} style={{
 //         padding: "3px 10px", borderRadius: 99, fontSize: 10, fontWeight: 700,
 //         background: C.primaryLight, color: C.primary,
 //         border: `1px solid ${C.primaryBorder}`,
 //         letterSpacing: "0.04em", textTransform: "uppercase",
 //         transition: "opacity 0.15s",
 //       }}>
-//         Income
+//         {badge}
 //       </span>
-
-//       {/* Actions */}
-//       <div className="inc-actions" style={{ display: "flex", gap: 4, opacity: 0, transition: "opacity 0.15s" }}>
-//         <IconBtn onClick={() => onEdit(income)} title="Edit"><EditIcon /></IconBtn>
-//         <IconBtn danger onClick={() => onDelete(income)} title="Delete"><TrashIcon /></IconBtn>
+//       <div className={`${rowClass}-actions`} style={{ display: "flex", gap: 4, opacity: 0, transition: "opacity 0.15s" }}>
+//         <IconBtn onClick={onEdit} title="Edit"><EditIcon /></IconBtn>
+//         <IconBtn danger onClick={onDelete} title="Delete"><TrashIcon /></IconBtn>
 //       </div>
 //     </div>
 //   );
 // }
 
+// // ─── Section Panel ────────────────────────────────────────────────────────────
+// function SectionPanel({ items, isLoading, isError, badge, rowClass, searchTerm, onEdit, onDelete }) {
+//   const filtered = items.filter((i) =>
+//     (i.body_type || i.skin_tone || "").toLowerCase().includes(searchTerm.toLowerCase())
+//   );
+
+//   if (isLoading) return (
+//     <div style={{ display: "flex", alignItems: "center", gap: 10, padding: 24, color: C.textMuted, fontSize: 14 }}>
+//       <Spinner size={18} /> Loading…
+//     </div>
+//   );
+
+//   if (isError) return (
+//     <div style={{ padding: 24, background: "#fef2f2", border: "1.5px solid #fecaca", borderRadius: 12, color: "#991b1b", fontSize: 14 }}>
+//       Failed to load data. Please try again.
+//     </div>
+//   );
+
+//   if (filtered.length === 0) return (
+//     <div style={{ textAlign: "center", padding: "48px 24px", color: C.textMuted, fontSize: 14 }}>
+//       {searchTerm ? `No results matching "${searchTerm}"` : `No ${badge.toLowerCase()}s yet.`}
+//     </div>
+//   );
+
+//   return (
+//     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+//       {filtered.map((item) => (
+//         <ItemRow
+//           key={item.id}
+//           label={item.body_type || item.skin_tone}
+//           badge={badge}
+//           rowClass={rowClass}
+//           onEdit={() => onEdit(item)}
+//           onDelete={() => onDelete(item)}
+//         />
+//       ))}
+//     </div>
+//   );
+// }
+
 // // ─── Main Component ───────────────────────────────────────────────────────────
-// export default function IncomeManagement() {
+// export default function BodySkinManagement() {
+//   const [activeTab, setActiveTab] = useState("body");
 //   const [searchTerm, setSearchTerm] = useState("");
 //   const [showAdd, setShowAdd] = useState(false);
-//   const [editingIncome, setEditingIncome] = useState(null);
-//   const [deletingIncome, setDeletingIncome] = useState(null);
+//   const [editingItem, setEditingItem] = useState(null);
+//   const [deletingItem, setDeletingItem] = useState(null);
 
-//   const { data: incomes = [], isLoading, isError } = useGetIncomes();
-//   const addMutation = useAddIncome();
-//   const editMutation = useEditIncome();
-//   const deleteMutation = useDeleteIncome();
-
-//   const filtered = incomes
-//     .filter((i) => i.income_label.toLowerCase().includes(searchTerm.toLowerCase()))
-//     .sort((a, b) => a.sort_order - b.sort_order);
-
-//   const handleAdd = ({ income_label, sort_order }) => {
-//     addMutation.mutate({ income_label, sort_order }, { onSuccess: () => setShowAdd(false) });
+//   // Reset search when switching tabs
+//   const handleTabChange = (tab) => {
+//     setActiveTab(tab);
+//     setSearchTerm("");
 //   };
 
-//   const handleEdit = ({ income_label, sort_order }) => {
-//     if (!editingIncome) return;
-//     editMutation.mutate(
-//       { id: editingIncome.id, income_label, sort_order },
-//       { onSuccess: () => setEditingIncome(null) }
-//     );
+//   // Body Type hooks
+//   const { data: bodyTypes = [], isLoading: btLoading, isError: btError } = useGetBodyTypes();
+//   const addBodyType = useAddBodyType();
+//   const editBodyType = useEditBodyType();
+//   const deleteBodyType = useDeleteBodyType();
+
+//   // Skin Tone hooks
+//   const { data: skinTones = [], isLoading: stLoading, isError: stError } = useGetSkinTones();
+//   const addSkinTone = useAddSkinTone();
+//   const editSkinTone = useEditSkinTone();
+//   const deleteSkinTone = useDeleteSkinTone();
+
+//   const isBody = activeTab === "body";
+//   const currentItems = isBody ? bodyTypes : skinTones;
+//   const addMutation = isBody ? addBodyType : addSkinTone;
+//   const editMutation = isBody ? editBodyType : editSkinTone;
+//   const deleteMutation = isBody ? deleteBodyType : deleteSkinTone;
+//   const isLoading = isBody ? btLoading : stLoading;
+//   const isError = isBody ? btError : stError;
+//   const badge = isBody ? "Body Type" : "Skin Tone";
+//   const rowClass = isBody ? "bt-row" : "st-row";
+//   const addLabel = isBody ? "Add Body Type" : "Add Skin Tone";
+//   const placeholder = isBody ? "e.g. Athletic" : "e.g. Wheatish";
+//   const count = currentItems.length;
+
+//   const handleAdd = (name) => {
+//     const payload = isBody ? { body_type_name: name } : { skin_tone_name: name };
+//     addMutation.mutate(payload, { onSuccess: () => setShowAdd(false) });
+//   };
+
+//   const handleEdit = (name) => {
+//     if (!editingItem) return;
+//     const payload = isBody
+//       ? { id: editingItem.id, body_type_name: name }
+//       : { id: editingItem.id, skin_tone_name: name };
+//     editMutation.mutate(payload, { onSuccess: () => setEditingItem(null) });
 //   };
 
 //   const handleDelete = () => {
-//     if (!deletingIncome) return;
-//     deleteMutation.mutate(deletingIncome.id, { onSuccess: () => setDeletingIncome(null) });
+//     if (!deletingItem) return;
+//     deleteMutation.mutate(deletingItem.id, { onSuccess: () => setDeletingItem(null) });
 //   };
+
+//   const editingName = editingItem
+//     ? (editingItem.body_type || editingItem.skin_tone)
+//     : "";
+
+//   const deletingName = deletingItem
+//     ? (deletingItem.body_type || deletingItem.skin_tone)
+//     : "";
 
 //   return (
 //     <>
 //       <style>{`
-//         @keyframes inc-spin { to { transform: rotate(360deg); } }
-//         .inc-row:hover .inc-actions { opacity: 1 !important; }
-//         .inc-row:hover .inc-badge { opacity: 0; }
+//         @keyframes bs-spin { to { transform: rotate(360deg); } }
+//         .bt-row:hover .bt-row-actions { opacity: 1 !important; }
+//         .bt-row:hover .bt-row-badge { opacity: 0; }
+//         .st-row:hover .st-row-actions { opacity: 1 !important; }
+//         .st-row:hover .st-row-badge { opacity: 0; }
 //       `}</style>
 
 //       <div style={{ minHeight: "100vh", background: C.bg, padding: "28px 24px", fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
@@ -307,10 +339,10 @@
 //         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 16, marginBottom: 24 }}>
 //           <div>
 //             <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: C.textPrimary, letterSpacing: "-0.01em" }}>
-//               Income Management
+//               Body & Skin Management
 //             </h1>
 //             <p style={{ margin: "4px 0 0", fontSize: 13, color: C.textMuted }}>
-//               {incomes.length} income range{incomes.length !== 1 ? "s" : ""} configured
+//               {count} {badge.toLowerCase()}{count !== 1 ? "s" : ""} configured
 //             </p>
 //           </div>
 //           <button
@@ -325,14 +357,39 @@
 //             onMouseEnter={(e) => { e.currentTarget.style.background = C.primaryDark; e.currentTarget.style.transform = "translateY(-1px)"; }}
 //             onMouseLeave={(e) => { e.currentTarget.style.background = C.primary; e.currentTarget.style.transform = "none"; }}
 //           >
-//             <PlusIcon /> Add Income Range
+//             <PlusIcon /> {addLabel}
 //           </button>
+//         </div>
+
+//         {/* Tabs */}
+//         <div style={{
+//           display: "flex", gap: 4, marginBottom: 20,
+//           background: "#fff", border: `1.5px solid ${C.border}`,
+//           borderRadius: 12, padding: 4,
+//           width: "fit-content",
+//         }}>
+//           {TABS.map((tab) => (
+//             <button
+//               key={tab.key}
+//               onClick={() => handleTabChange(tab.key)}
+//               style={{
+//                 padding: "8px 20px", borderRadius: 9, border: "none",
+//                 fontSize: 13, fontWeight: 600, cursor: "pointer",
+//                 transition: "all 0.15s",
+//                 background: activeTab === tab.key ? C.primary : "transparent",
+//                 color: activeTab === tab.key ? "#fff" : C.textMuted,
+//                 boxShadow: activeTab === tab.key ? `0 2px 8px ${C.primary}35` : "none",
+//               }}
+//             >
+//               {tab.label}
+//             </button>
+//           ))}
 //         </div>
 
 //         {/* Search */}
 //         <input
 //           type="text"
-//           placeholder="Search income ranges…"
+//           placeholder={`Search ${badge.toLowerCase()}s…`}
 //           value={searchTerm}
 //           onChange={(e) => setSearchTerm(e.target.value)}
 //           style={{
@@ -346,55 +403,46 @@
 //         />
 
 //         {/* List */}
-//         {isLoading ? (
-//           <div style={{ display: "flex", alignItems: "center", gap: 10, padding: 24, color: C.textMuted, fontSize: 14 }}>
-//             <Spinner size={18} /> Loading income ranges…
-//           </div>
-//         ) : isError ? (
-//           <div style={{ padding: 24, background: "#fef2f2", border: "1.5px solid #fecaca", borderRadius: 12, color: "#991b1b", fontSize: 14 }}>
-//             Failed to load data. Please try again.
-//           </div>
-//         ) : filtered.length === 0 ? (
-//           <div style={{ textAlign: "center", padding: "48px 24px", color: C.textMuted, fontSize: 14 }}>
-//             {searchTerm ? `No income ranges matching "${searchTerm}"` : "No income ranges yet. Click Add Income Range to get started."}
-//           </div>
-//         ) : (
-//           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-//             {filtered.map((income) => (
-//               <IncomeRow
-//                 key={income.id}
-//                 income={income}
-//                 onEdit={(i) => setEditingIncome(i)}
-//                 onDelete={(i) => setDeletingIncome(i)}
-//               />
-//             ))}
-//           </div>
-//         )}
+//         <SectionPanel
+//           items={currentItems}
+//           isLoading={isLoading}
+//           isError={isError}
+//           badge={badge}
+//           rowClass={rowClass}
+//           searchTerm={searchTerm}
+//           onEdit={(item) => setEditingItem(item)}
+//           onDelete={(item) => setDeletingItem(item)}
+//         />
 //       </div>
 
-//       {/* Modals */}
+//       {/* Add Modal */}
 //       <Modal
 //         isOpen={showAdd}
 //         onClose={() => setShowAdd(false)}
-//         title="Add Income Range"
+//         title={addLabel}
+//         placeholder={placeholder}
+//         existingName={null}
 //         onSubmit={handleAdd}
 //         isPending={addMutation.isPending}
 //       />
 
+//       {/* Edit Modal */}
 //       <Modal
-//         isOpen={!!editingIncome}
-//         onClose={() => setEditingIncome(null)}
-//         title="Edit Income Range"
-//         existing={editingIncome}
+//         isOpen={!!editingItem}
+//         onClose={() => setEditingItem(null)}
+//         title={`Edit ${badge}`}
+//         placeholder={placeholder}
+//         existingName={editingName}
 //         onSubmit={handleEdit}
 //         isPending={editMutation.isPending}
 //       />
 
+//       {/* Delete Confirm */}
 //       <ConfirmDialog
-//         isOpen={!!deletingIncome}
-//         onClose={() => setDeletingIncome(null)}
+//         isOpen={!!deletingItem}
+//         onClose={() => setDeletingItem(null)}
 //         onConfirm={handleDelete}
-//         message={`Are you sure you want to delete "${deletingIncome?.income_label}"?`}
+//         message={`Are you sure you want to delete "${deletingName}"?`}
 //         isPending={deleteMutation.isPending}
 //       />
 //     </>

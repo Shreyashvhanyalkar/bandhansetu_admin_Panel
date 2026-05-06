@@ -19,7 +19,7 @@ const NAV_ITEMS = [
       { label: "Performance", to: "/admin/dashboard/performance" },
     ],
   },
-  
+
 
 
   {
@@ -32,9 +32,14 @@ const NAV_ITEMS = [
     children: [
       { label: "User Management", to: "/admin/requests" },
       { label: "Location Management", to: "/admin/locations" },
-      {label: "Marital Status Management", to: "/admin/marital-status" },
+      // {label: "Marital Status Management", to: "/admin/marital-status" },
       { label: "Education Management", to: "/admin/education" },
-      { label: "Income Management", to: "/admin/income" },
+      // { label: "Income Management", to: "/admin/income" },
+      // { label: "Diet Management", to: "/admin/diet" },
+      // {label: "Body & Skin Management", to: "/admin/body-skin" },
+      // { label: "Working Category Management", to: "/admin/working-category" },
+      // { label: "Mother Tongue Management", to: "/admin/mothertongue" },
+      { label: "Currency Management", to: "/admin/currency" },
     ],
   },
 
@@ -63,7 +68,7 @@ const NAV_ITEMS = [
       </svg>
     ),
   },
-  
+
   {
     label: "Reports & Moderation",
     icon: (
@@ -160,10 +165,9 @@ function NavGroup({ item, onClose, isMobile, depth = 0 }) {
         to={item.to}
         onClick={() => isMobile && onClose?.()}
         className={({ isActive }) =>
-          `flex items-center gap-2 ${getPaddingClass()} py-2 rounded-lg text-sm font-medium transition-all duration-200 my-0.5 ${
-            isActive
-              ? `bg-gradient-to-r from-fuchsia-50 to-transparent text-fuchsia-700 shadow-sm ${getActiveBorderClass()}`
-              : "text-gray-600 hover:bg-gray-100 hover:text-fuchsia-600"
+          `flex items-center gap-2 ${getPaddingClass()} py-2 rounded-lg text-sm font-medium transition-all duration-200 my-0.5 ${isActive
+            ? `bg-gradient-to-r from-fuchsia-50 to-transparent text-fuchsia-700 shadow-sm ${getActiveBorderClass()}`
+            : "text-gray-600 hover:bg-gray-100 hover:text-fuchsia-600"
           }`
         }
       >
@@ -191,11 +195,10 @@ function NavGroup({ item, onClose, isMobile, depth = 0 }) {
     <div className="my-0.5">
       <button
         onClick={() => setOpen(v => !v)}
-        className={`w-full flex items-center gap-2 ${getPaddingClass()} py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-          open || isParentActive
+        className={`w-full flex items-center gap-2 ${getPaddingClass()} py-2 rounded-lg text-sm font-medium transition-all duration-200 ${open || isParentActive
             ? "text-fuchsia-700 bg-gray-100/80"
             : "text-gray-600 hover:bg-gray-100 hover:text-fuchsia-600"
-        }`}
+          }`}
       >
         {item.icon && (
           <span className={`transition-all duration-200 ${open || isParentActive ? "text-fuchsia-600" : "text-gray-400"}`}>
@@ -214,9 +217,8 @@ function NavGroup({ item, onClose, isMobile, depth = 0 }) {
       </button>
 
       <div
-        className={`overflow-hidden transition-all duration-300 ease-out ${
-          open ? "max-h-[500px] opacity-100 mt-0.5" : "max-h-0 opacity-0"
-        }`}
+        className={`overflow-hidden transition-all duration-300 ease-out ${open ? "max-h-[500px] opacity-100 mt-0.5" : "max-h-0 opacity-0"
+          }`}
       >
         <div className="ml-2 space-y-0.5">
           {item.children.map(child => (

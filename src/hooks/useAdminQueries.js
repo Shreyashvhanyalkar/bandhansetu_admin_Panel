@@ -11,10 +11,7 @@ const getAuthHeaders = () => ({
 
 const USERS_KEY = ["admin", "users"];
 
-// In useAllUsers hook
-
-
-
+// ==================== LIST OF USERS ====================
 export const useAllUsers = (filters = {}) => {
   const {
     page = 1,
@@ -26,8 +23,7 @@ export const useAllUsers = (filters = {}) => {
   } = filters;
 
   return useQuery({
-    queryKey: ["admin", "users", { page, limit, search, status, deleted, gender }], // Clean and reliable key
-
+    queryKey: ["admin", "users", { page, limit, search, status, deleted, gender }],
     queryFn: async () => {
       const params = new URLSearchParams();
       params.set("page", String(page));
@@ -36,15 +32,11 @@ export const useAllUsers = (filters = {}) => {
       if (search?.trim()) params.set("search", search.trim());
       if (status !== undefined) params.set("status", String(status));
       if (deleted !== undefined) params.set("deleted", String(deleted));
-      if (gender) params.set("gender", gender);        // ← This must be sent
+      if (gender) params.set("gender", gender);
 
       const url = `${BASE_URL}/api/auth/admin/users?${params.toString()}`;
 
-      console.log("Fetching users with gender =", gender, "→ Full URL:", url); // Debugging
-
-      const res = await fetch(url, { 
-        headers: getAuthHeaders() 
-      });
+      const res = await fetch(url, { headers: getAuthHeaders() });
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -52,20 +44,21 @@ export const useAllUsers = (filters = {}) => {
       }
 
       const response = await res.json();
-
       const usersData = response.users || [];
       const paginationData = response.pagination || null;
 
       const users = usersData.map((u) => ({
         id: u.id,
-        name: `${u.first_name || ""} ${u.middle_name || ""} ${u.last_name || ""}`.trim(),
+        platformId: u.platform_id || u.platformId || "",
+        name: `${u.firstName || u.first_name || ""} ${u.middleName || u.middle_name || ""} ${u.lastName || u.last_name || ""}`.trim(),
         email: u.email,
-        mobile: String(u.mobile_number || ""),
-        countryCode: u.country_code || "+91",
+        mobile: String(u.mobile_number || u.mobileNumber || ""),
+        countryCode: u.country_code || u.countryCode || "+91",
         rawStatus: u.status ?? 0,
         status: u.status === 1 ? "approved" : "pending",
         isDeleted: !!u.deleted_at,
         gender: u.gender || "",
+        // Add more fields if needed for list view
       }));
 
       return {
@@ -78,12 +71,38 @@ export const useAllUsers = (filters = {}) => {
         },
       };
     },
-
     keepPreviousData: true,
     refetchOnWindowFocus: false,
   });
 };
 
+// ==================== SINGLE USER PROFILE ====================
+export const useUserProfile = (userId) => {
+  return useQuery({
+    queryKey: ["admin", "userProfile", userId],
+    queryFn: async () => {
+      if (!userId) throw new Error("User ID is required");
+
+      const res = await fetch(`${BASE_URL}/api/auth/admin/users/${userId}`, {
+        headers: getAuthHeaders(),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || "Failed to fetch user profile");
+      }
+
+      const data = await res.json();
+      // Return the user object (adjust key if your API wraps it differently)
+      return data.user || data;
+    },
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    cacheTime: 10 * 60 * 1000,
+  });
+};
+
+// ==================== MUTATIONS ====================
 export const useToggleUserStatus = () => {
   const queryClient = useQueryClient();
 
@@ -92,7 +111,7 @@ export const useToggleUserStatus = () => {
       const res = await fetch(`${BASE_URL}/api/auth/admin/users/status/${userId}`, {
         method: "PATCH",
         headers: getAuthHeaders(),
-        body: JSON.stringify({ status }),        // { status: 0 or 1 }
+        body: JSON.stringify({ status }),
       });
 
       if (!res.ok) {
@@ -104,6 +123,8 @@ export const useToggleUserStatus = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: USERS_KEY });
+      // Also invalidate profile if open
+      queryClient.invalidateQueries({ queryKey: ["admin", "userProfile"] });
     },
   });
 };
@@ -131,7 +152,30 @@ export const useDeleteUser = () => {
   });
 };
 
-// Legacy hooks kept for backward compatibility
+export const useRestoreUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (userId) => {
+      const res = await fetch(`${BASE_URL}/api/auth/admin/users/restore/${userId}`, {
+        method: "PATCH",
+        headers: getAuthHeaders(),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || "Failed to restore user");
+      }
+
+      return userId;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: USERS_KEY });
+    },
+  });
+};
+
+// Legacy hooks (kept for backward compatibility)
 export const useApproveUser = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -159,7 +203,6 @@ export const useApproveUser = () => {
     },
   });
 };
-
 export const useUpdateUser = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -187,27 +230,4 @@ export const useUpdateUser = () => {
       });
     },
   });
-};
-
-export const useRestoreUser = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (userId) => {
-      const res = await fetch(`${BASE_URL}/api/auth/admin/users/restore/${userId}`, {
-        method: "PATCH",
-        headers: getAuthHeaders(),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || "Failed to restore user");
-      }
-
-      return userId;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: USERS_KEY });
-    },
-  });
-};
+};  

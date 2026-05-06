@@ -1,5 +1,4 @@
-
-// // src/hooks/useIncomeManagement.js
+// // src/hooks/useMotherTongue.js
 // import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 // const BASE_URL = import.meta.env.VITE_BASE_URL;
@@ -18,69 +17,69 @@
 //   return json;
 // };
 
-// export const INCOME_KEYS = {
-//   all: ["incomes"],
+// export const MOTHER_TONGUE_KEYS = {
+//   all: ["mother-tongues"],
 // };
 
-// // ====================== INCOME RANGES ======================
-// const fetchIncomes = async () => {
-//   const res = await fetch(`${BASE_URL}/api/auth/admin/income`, {
+// // ====================== MOTHER TONGUE ======================
+// const fetchMotherTongues = async () => {
+//   const res = await fetch(`${BASE_URL}/api/auth/admin/mother-tongue`, {
 //     headers: getAuthHeaders(),
 //   });
 //   const json = await handleResponse(res);
-//   return json.incomes || [];
+//   return json.mother_tongues || [];
 // };
 
-// export const useGetIncomes = () =>
+// export const useGetMotherTongues = () =>
 //   useQuery({
-//     queryKey: INCOME_KEYS.all,
-//     queryFn: fetchIncomes,
+//     queryKey: MOTHER_TONGUE_KEYS.all,
+//     queryFn: fetchMotherTongues,
 //     staleTime: 5 * 60 * 1000,
 //   });
 
-// export const useAddIncome = () => {
+// export const useAddMotherTongue = () => {
 //   const queryClient = useQueryClient();
 //   return useMutation({
-//     mutationFn: async ({ income_label, sort_order }) => {
-//       const res = await fetch(`${BASE_URL}/api/auth/admin/income`, {
+//     mutationFn: async ({ mothertongue_name }) => {
+//       const res = await fetch(`${BASE_URL}/api/auth/admin/mother-tongue`, {
 //         method: "POST",
 //         headers: getAuthHeaders(),
-//         body: JSON.stringify({ income_label, sort_order: Number(sort_order) }),
+//         body: JSON.stringify({ mothertongue_name }),
 //       });
 //       return handleResponse(res);
 //     },
 //     onSuccess: () =>
-//       queryClient.invalidateQueries({ queryKey: INCOME_KEYS.all }),
+//       queryClient.invalidateQueries({ queryKey: MOTHER_TONGUE_KEYS.all }),
 //   });
 // };
 
-// export const useEditIncome = () => {
+// export const useEditMotherTongue = () => {
 //   const queryClient = useQueryClient();
 //   return useMutation({
-//     mutationFn: async ({ id, income_label, sort_order }) => {
-//       const res = await fetch(`${BASE_URL}/api/auth/admin/income/${id}`, {
+//     mutationFn: async ({ id, mothertongue_name }) => {
+//       const res = await fetch(`${BASE_URL}/api/auth/admin/mother-tongue/${id}`, {
 //         method: "PUT",
 //         headers: getAuthHeaders(),
-//         body: JSON.stringify({ income_label, sort_order: Number(sort_order) }),
+//         body: JSON.stringify({ mothertongue_name }),
 //       });
 //       return handleResponse(res);
 //     },
 //     onSuccess: () =>
-//       queryClient.invalidateQueries({ queryKey: INCOME_KEYS.all }),
+//       queryClient.invalidateQueries({ queryKey: MOTHER_TONGUE_KEYS.all }),
 //   });
 // };
 
-// export const useDeleteIncome = () => {
+// export const useDeleteMotherTongue = () => {
 //   const queryClient = useQueryClient();
 //   return useMutation({
 //     mutationFn: async (id) => {
-//       const res = await fetch(`${BASE_URL}/api/auth/admin/income/${id}`, {
+//       const res = await fetch(`${BASE_URL}/api/auth/admin/mother-tongue/${id}`, {
 //         method: "DELETE",
 //         headers: getAuthHeaders(),
 //       });
 //       return handleResponse(res);
 //     },
 //     onSuccess: () =>
-//       queryClient.invalidateQueries({ queryKey: INCOME_KEYS.all }),
+//       queryClient.invalidateQueries({ queryKey: MOTHER_TONGUE_KEYS.all }),
 //   });
 // };

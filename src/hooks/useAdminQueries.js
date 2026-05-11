@@ -19,11 +19,10 @@ export const useAllUsers = (filters = {}) => {
     search = "",
     status,
     deleted,
-    gender,
   } = filters;
 
   return useQuery({
-    queryKey: ["admin", "users", { page, limit, search, status, deleted, gender }],
+    queryKey: ["admin", "users", { page, limit, search, status, deleted }],
     queryFn: async () => {
       const params = new URLSearchParams();
       params.set("page", String(page));
@@ -32,7 +31,6 @@ export const useAllUsers = (filters = {}) => {
       if (search?.trim()) params.set("search", search.trim());
       if (status !== undefined) params.set("status", String(status));
       if (deleted !== undefined) params.set("deleted", String(deleted));
-      if (gender) params.set("gender", gender);
 
       const url = `${BASE_URL}/api/auth/admin/users?${params.toString()}`;
 
@@ -58,7 +56,9 @@ export const useAllUsers = (filters = {}) => {
         status: u.status === 1 ? "approved" : "pending",
         isDeleted: !!u.deleted_at,
         gender: u.gender || "",
-        // Add more fields if needed for list view
+        age: u.age ?? null,
+        cityName: u.cityName || u.city_name || "",
+        stateName: u.stateName || u.state_name || "",
       }));
 
       return {

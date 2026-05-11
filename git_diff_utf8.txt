@@ -1,0 +1,771 @@
+﻿diff --git a/src/pages/admin/AproveReject.jsx b/src/pages/admin/AproveReject.jsx
+index 385cb8c..27aabd3 100644
+--- a/src/pages/admin/AproveReject.jsx
++++ b/src/pages/admin/AproveReject.jsx
+@@ -12,11 +12,11 @@ import {
+ 
+ // ΓöÇΓöÇΓöÇ Design Tokens ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+ const C = {
+-  primary: "#e990e8",      // Slightly lighter than original #a21caf
+-  primaryDark: "#da0eed",
+-  primaryLight: "#fdf4ff",
+-  primaryMid: "#fae8ff",
+-  primaryBorder: "#f0abfc",
++  primary: "#c026d3",      // Fuchsia 600
++  primaryDark: "#a21caf",  // Fuchsia 700
++  primaryLight: "#fdf4ff", // fuchsia-50
++  primaryMid: "#fae8ff",   // fuchsia-100
++  primaryBorder: "#f0abfc",// fuchsia-300
+   active: "#047857",
+   activeBg: "#ecfdf5",
+   activeBorder: "#a7f3d0",
+@@ -31,7 +31,7 @@ const C = {
+   infoBorder: "#bfdbfe",
+ };
+ 
+-const AVATAR_PALETTE = ["#a21caf", "#7C3AED", "#0369A1", "#0F766E", "#B45309", "#BE123C"];
++const AVATAR_PALETTE = ["#c026d3", "#a21caf", "#86198f", "#d946ef", "#e879f9", "#701a75"];
+ const PAGE_SIZES = [10, 25, 50, 100];
+ 
+ // ΓöÇΓöÇΓöÇ Enhanced mock data with received requests ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+diff --git a/src/pages/admin/Dashboard.jsx b/src/pages/admin/Dashboard.jsx
+index 4edac8d..8a6b0e9 100644
+--- a/src/pages/admin/Dashboard.jsx
++++ b/src/pages/admin/Dashboard.jsx
+@@ -47,12 +47,12 @@ const RECENT_ACTIVITIES = [
+ ];
+ 
+ const COLOR = {
+-  primary:       "#e990e8",      // Slightly lighter than original #a21caf
+-  primaryDark:   "#da0eed", 
+-  primaryHover: "#a21caf",
+-  primaryBg: "#fdf4ff",
+-  primaryText: "#bd57c6",
+-  primaryLight: "#e879f9",
++  primary:       "#c026d3",      // Fuchsia 600
++  primaryDark:   "#a21caf",      // Fuchsia 700
++  primaryHover:  "#86198f",      // Fuchsia 800
++  primaryBg:     "#fdf4ff",      // Fuchsia 50
++  primaryText:   "#c026d3",
++  primaryLight:  "#f0abfc",      // Fuchsia 300
+   green: "#639922",
+   greenBg: "#EAF3DE",
+   greenText: "#27500A",
+diff --git a/src/pages/admin/SubAdminManagement.jsx b/src/pages/admin/SubAdminManagement.jsx
+index d149f89..7ec0774 100644
+--- a/src/pages/admin/SubAdminManagement.jsx
++++ b/src/pages/admin/SubAdminManagement.jsx
+@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from "react";
+ 
+ // ΓöÇΓöÇΓöÇ Design Tokens ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+ const C = {
+-  primary:       "#e990e8",
++  primary:       "#c026d3",
+   primaryDark:   "#da0eed",
+   primaryLight:  "#fdf4ff",
+   primaryMid:    "#fae8ff",
+diff --git a/src/pages/admin/profileDetails.jsx b/src/pages/admin/profileDetails.jsx
+index c88ee59..516c177 100644
+--- a/src/pages/admin/profileDetails.jsx
++++ b/src/pages/admin/profileDetails.jsx
+@@ -1,354 +1,391 @@
+ // src/pages/admin/profileDetails.jsx
+ import { useNavigate, useParams } from "react-router-dom";
++import { useState } from "react";
+ import { useQuery } from "@tanstack/react-query";
+ 
+ const BASE_URL = import.meta.env.VITE_BASE_URL;
+ 
+ const getAuthHeaders = () => ({
+-    "Content-Type": "application/json",
+-    Authorization: `Bearer ${localStorage.getItem("token")}`,
+-    "x-app-type": "admin",
++  "Content-Type": "application/json",
++  Authorization: `Bearer ${localStorage.getItem("token")}`,
++  "x-app-type": "admin",
+ });
+ 
+ // ΓöÇΓöÇΓöÇ Fetch user by paginating through list ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+-// No direct GET /users/:id endpoint (returns 405).
+-// We page through the list with limit=100 until we find the matching id.
+ const fetchUserById = async (userId) => {
+-    const LIMIT = 100;
+-    let page = 1;
+-
+-    while (true) {
+-        const res = await fetch(
+-            `${BASE_URL}/api/auth/admin/users?page=${page}&limit=${LIMIT}`,
+-            { headers: getAuthHeaders() }
+-        );
+-
+-        if (!res.ok) {
+-            const err = await res.json().catch(() => ({}));
+-            throw new Error(err.message || "Failed to fetch users");
+-        }
+-
+-        const data = await res.json();
+-        const users = data.users || [];
++  const LIMIT = 100;
++  let page = 1;
+ 
+-        // Find user in this page
+-        const found = users.find((u) => u.id === userId);
+-        if (found) return found;
++  while (true) {
++    const res = await fetch(
++      `${BASE_URL}/api/auth/admin/users?page=${page}&limit=${LIMIT}`,
++      { headers: getAuthHeaders() }
++    );
+ 
+-        // Stop if last page or empty
+-        const totalPages = data.pagination?.total_pages ?? 1;
+-        if (page >= totalPages || users.length === 0) break;
+-        page++;
++    if (!res.ok) {
++      const err = await res.json().catch(() => ({}));
++      throw new Error(err.message || "Failed to fetch users");
+     }
+ 
+-    throw new Error("User not found");
++    const data = await res.json();
++    const users = data.users || [];
++
++    const found = users.find((u) => u.id === userId);
++    if (found) return found;
++
++    const totalPages = data.pagination?.total_pages ?? 1;
++    if (page >= totalPages || users.length === 0) break;
++    page++;
++  }
++
++  throw new Error("User not found");
+ };
+ 
+-// ΓöÇΓöÇΓöÇ Hook ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+ const useUserDetail = (userId) =>
+-    useQuery({
+-        queryKey: ["admin", "userDetail", userId],
+-        queryFn: () => fetchUserById(userId),
+-        enabled: !!userId,
+-        staleTime: 5 * 60 * 1000,
+-    });
+-
+-// ΓöÇΓöÇΓöÇ Helpers ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
++  useQuery({
++    queryKey: ["admin", "userDetail", userId],
++    queryFn: () => fetchUserById(userId),
++    enabled: !!userId,
++    staleTime: 5 * 60 * 1000,
++  });
++
+ const val = (v, fallback = "ΓÇö") =>
+-    v !== undefined && v !== null && v !== "" ? v : fallback;
+-
+-function Section({ title, rows }) {
+-    return (
+-        <div>
+-            <h3 style={{
+-                color: "#601000", fontSize: 16, fontWeight: 700,
+-                marginBottom: 8, marginTop: 0,
+-                fontFamily: "Rubik, sans-serif",
+-            }}>
+-                {title}
+-            </h3>
+-            <div style={{
+-                display: "flex", flexDirection: "column", gap: 4,
+-                fontFamily: "Rubik, sans-serif", fontWeight: 500,
+-                fontSize: 14, lineHeight: "160%", color: "#000",
+-            }}>
+-                {rows.map(([label, value]) => (
+-                    <div key={label}>
+-                        <span style={{ color: "#bd201c" }}>{label}:</span>{" "}
+-                        {val(value)}
+-                    </div>
+-                ))}
+-            </div>
+-            <hr style={{ borderTop: "1px solid #e0e0e0", margin: "16px 0" }} />
+-        </div>
+-    );
+-}
++  v !== undefined && v !== null && v !== "" ? v : fallback;
+ 
++// ΓöÇΓöÇΓöÇ Skeleton ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+ function Skeleton() {
+-    return (
+-        <div style={{ padding: "0 16px", marginTop: 120 }}>
+-            <div style={{ textAlign: "center", marginBottom: 24 }}>
+-                <div style={{
+-                    width: 80, height: 80, borderRadius: 40,
+-                    background: "#e0e0e0", margin: "0 auto 12px",
+-                    animation: "pd-pulse 1.5s ease-in-out infinite"
+-                }} />
+-                <div style={{ height: 14, width: 160, background: "#e0e0e0", borderRadius: 6, margin: "0 auto 8px", animation: "pd-pulse 1.5s ease-in-out infinite" }} />
+-                <div style={{ height: 10, width: 100, background: "#eee", borderRadius: 6, margin: "0 auto", animation: "pd-pulse 1.5s ease-in-out infinite" }} />
+-            </div>
+-            {[200, 160, 180, 140, 120].map((w, i) => (
+-                <div key={i} style={{
+-                    height: 13, width: w, background: "#e0e0e0", borderRadius: 6,
+-                    marginBottom: 14, animation: "pd-pulse 1.5s ease-in-out infinite"
+-                }} />
+-            ))}
+-        </div>
+-    );
++  return (
++    <div style={{ padding: "0 16px", marginTop: "-109px" }}>
++      <div style={{
++        width: "100%", height: 205, borderRadius: 28,
++        background: "#e0e0e0", marginBottom: 24,
++        animation: "pd-pulse 1.5s ease-in-out infinite"
++      }} />
++      {[200, 160, 180, 140, 120].map((w, i) => (
++        <div key={i} style={{
++          height: 13, width: w, background: "#e0e0e0", borderRadius: 6,
++          marginBottom: 14, animation: "pd-pulse 1.5s ease-in-out infinite"
++        }} />
++      ))}
++    </div>
++  );
+ }
+ 
+ // ΓöÇΓöÇΓöÇ Main Component ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+ export default function ProfileDetails() {
+-    const navigate = useNavigate();
+-    const { userId } = useParams();
++  const navigate = useNavigate();
++  const { userId } = useParams();
+ 
+-    const { data: user, isLoading, isError, error } = useUserDetail(userId);
++  const [currentSlide, setCurrentSlide] = useState(0);
+ 
+-    // Normalise ΓÇö API returns camelCase
+-    const u = user || {};
+-    const fullName = [u.firstName, u.middleName, u.lastName]
+-        .filter(Boolean).join(" ") || val(u.name);
++  const { data: user, isLoading, isError, error } = useUserDetail(userId);
+ 
+-    const initials = fullName
+-        .split(" ")
+-        .map((w) => w[0])
+-        .slice(0, 2)
+-        .join("")
+-        .toUpperCase() || "?";
++  // Normalise camelCase API fields
++  const u = user || {};
++  const fullName = [u.firstName, u.middleName, u.lastName]
++    .filter(Boolean).join(" ") || "ΓÇö";
+ 
+-    return (
+-        <div className="min-h-screen flex items-center justify-center bg-[#fbfbfb] px-0 sm:px-4 font-[Rubik,sans-serif]">
+-            <div className="w-full sm:max-w-md min-h-screen sm:min-h-[85vh] sm:h-auto bg-[#ffffff] sm:rounded-2xl sm:shadow-2xl sm:my-8 flex flex-col relative overflow-hidden">
++  // Build slides from user photos if available, else show avatar placeholder
++  const photos = u.photos && u.photos.length > 0 ? u.photos : null;
++  const slideCount = photos ? photos.length : 1;
+ 
+-                {/* ΓöÇΓöÇ Red Gradient Header ΓöÇΓöÇ */}
+-                <div style={{
+-                    height: 242,
+-                    background: "linear-gradient(180deg, #601000 0%, #9C0425 100%)",
+-                    flexShrink: 0,
+-                }}>
++  const goToPrev = () =>
++    setCurrentSlide((prev) => (prev === 0 ? slideCount - 1 : prev - 1));
++  const goToNext = () =>
++    setCurrentSlide((prev) => (prev === slideCount - 1 ? 0 : prev + 1));
++
++  return (
++    <div className="min-h-screen flex items-center justify-center bg-[#fbfbfb] px-0 sm:px-4 font-[Rubik,sans-serif]">
++      <div className="w-full sm:max-w-md min-h-screen sm:min-h-[85vh] sm:h-auto bg-[#ffffff] sm:rounded-2xl sm:shadow-2xl sm:my-8 flex flex-col relative overflow-hidden">
++
++        {/* ΓöÇΓöÇ Header ΓöÇΓöÇ */}
++        <div style={{
++          height: 242,
++          background: "linear-gradient(180deg, #601000 0%, #9C0425 100%)"
++        }}>
++          <div style={{
++            display: "flex", alignItems: "center",
++            justifyContent: "space-between",
++            padding: "40px 20px 20px 20px"
++          }}>
++            <button
++              onClick={() => navigate(-1)}
++              style={{
++                background: "none", border: "none",
++                fontSize: 24, color: "#fff", padding: 0, cursor: "pointer"
++              }}
++            >
++              ΓåÉ
++            </button>
++            <h2 style={{
++              fontWeight: 700, fontSize: "22px", color: "#fff",
++              margin: 0, flex: 1, textAlign: "center",
++              fontFamily: "Rubik, sans-serif"
++            }}>
++              Profile
++            </h2>
++            <div style={{ width: 24 }} />
++          </div>
++        </div>
++
++        {/* ΓöÇΓöÇ Loading ΓöÇΓöÇ */}
++        {isLoading && <Skeleton />}
++
++        {/* ΓöÇΓöÇ Error ΓöÇΓöÇ */}
++        {isError && (
++          <div style={{
++            marginTop: "-109px", padding: "120px 16px 32px",
++            textAlign: "center"
++          }}>
++            <div style={{
++              background: "#fff5f5", borderRadius: 16,
++              padding: "32px 16px"
++            }}>
++              <div style={{ fontSize: 40, marginBottom: 12 }}>ΓÜá∩╕Å</div>
++              <p style={{ color: "#9B0424", fontWeight: 700, fontSize: 16 }}>
++                Failed to load profile
++              </p>
++              <p style={{ color: "#888", fontSize: 13, marginTop: 4 }}>
++                {error?.message}
++              </p>
++              <button
++                onClick={() => navigate(-1)}
++                style={{
++                  marginTop: 20, padding: "10px 28px", borderRadius: 50,
++                  background: "#9B0424", color: "#fff", border: "none",
++                  fontWeight: 600, cursor: "pointer", fontSize: 14,
++                  fontFamily: "Rubik, sans-serif",
++                }}
++              >
++                ΓåÉ Go Back
++              </button>
++            </div>
++          </div>
++        )}
++
++        {/* ΓöÇΓöÇ Main Content ΓöÇΓöÇ */}
++        {!isLoading && !isError && (
++          <>
++            {/* ΓöÇΓöÇ Image Slider ΓöÇΓöÇ */}
++            <div style={{ position: "relative", marginTop: "-109px", padding: "0 16px" }}>
++              <div style={{
++                width: "100%", height: 205, borderRadius: 28,
++                overflow: "hidden", boxShadow: "0 4px 14px rgba(0,0,0,0.15)",
++                position: "relative",
++                background: "linear-gradient(135deg, #601000 0%, #9C0425 100%)",
++              }}>
++                {photos ? (
++                  photos.map((img, index) => (
++                    <img
++                      key={index}
++                      src={img}
++                      alt={`Photo ${index + 1}`}
++                      style={{
++                        position: "absolute", inset: 0,
++                        width: "100%", height: "100%", objectFit: "cover",
++                        opacity: currentSlide === index ? 1 : 0,
++                        transition: "opacity 0.6s ease-in-out",
++                      }}
++                    />
++                  ))
++                ) : (
++                  /* Placeholder avatar when no photos */
++                  <div style={{
++                    width: "100%", height: "100%",
++                    display: "flex", flexDirection: "column",
++                    alignItems: "center", justifyContent: "center",
++                  }}>
+                     <div style={{
+-                        display: "flex", alignItems: "center",
+-                        justifyContent: "space-between",
+-                        padding: "40px 20px 20px 20px"
++                      width: 80, height: 80, borderRadius: 40,
++                      background: "rgba(255,255,255,0.2)",
++                      display: "flex", alignItems: "center", justifyContent: "center",
++                      fontWeight: 900, fontSize: 32, color: "#fff", marginBottom: 10,
+                     }}>
+-                        <button
+-                            onClick={() => navigate(-1)}
+-                            style={{
+-                                background: "none", border: "none",
+-                                fontSize: 24, color: "#fff", padding: 0, cursor: "pointer"
+-                            }}
+-                        >
+-                            ΓåÉ
+-                        </button>
+-                        <h2 style={{
+-                            fontFamily: "Rubik, sans-serif", fontWeight: 700,
+-                            fontSize: 22, color: "#fff", margin: 0,
+-                            textAlign: "center", flex: 1
+-                        }}>
+-                            Profile
+-                        </h2>
+-                        <div style={{ width: 24 }} />
++                      {fullName.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase() || "?"}
+                     </div>
+-                </div>
++                    <p style={{ color: "#fff", fontWeight: 700, fontSize: 16, margin: 0 }}>
++                      {fullName}
++                    </p>
++                    <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 12, margin: "4px 0 0" }}>
++                      {val(u.platformId)} ┬╖ {val(u.gender)}
++                    </p>
++                    {/* Status badge */}
++                    <div style={{
++                      position: "absolute", top: 12, right: 12,
++                      padding: "4px 12px", borderRadius: 20,
++                      fontSize: 11, fontWeight: 700,
++                      background: u.status === 1 ? "#22c55e" : "#f59e0b",
++                      color: "#fff",
++                    }}>
++                      {u.status === 1 ? "Active" : "Inactive"}
++                    </div>
++                  </div>
++                )}
+ 
+-                {/* ΓöÇΓöÇ Content overlapping header ΓöÇΓöÇ */}
+-                <div style={{
+-                    flex: 1, padding: "0 16px 20px",
+-                    marginTop: -109, overflowY: "auto",
+-                }}>
++                {/* Left Arrow */}
++                {slideCount > 1 && (
++                  <button
++                    onClick={goToPrev}
++                    style={{
++                      position: "absolute", left: "12px", top: "50%",
++                      transform: "translateY(-50%)",
++                      background: "rgba(0,0,0,0.5)", color: "white",
++                      border: "none", width: "36px", height: "36px",
++                      borderRadius: "50%", display: "flex",
++                      alignItems: "center", justifyContent: "center",
++                      cursor: "pointer", zIndex: 10, fontSize: 18,
++                    }}
++                  >
++                    ΓåÉ
++                  </button>
++                )}
+ 
+-                    {isLoading ? (
+-                        <Skeleton />
+-                    ) : isError ? (
+-                        <div style={{
+-                            marginTop: 120, textAlign: "center",
+-                            padding: "32px 16px",
+-                            background: "#fff5f5", borderRadius: 16
+-                        }}>
+-                            <div style={{ fontSize: 40, marginBottom: 12 }}>ΓÜá∩╕Å</div>
+-                            <p style={{ color: "#9B0424", fontWeight: 700, fontSize: 16 }}>
+-                                Failed to load profile
+-                            </p>
+-                            <p style={{ color: "#888", fontSize: 13, marginTop: 4 }}>
+-                                {error?.message}
+-                            </p>
+-                            <button
+-                                onClick={() => navigate(-1)}
+-                                style={{
+-                                    marginTop: 20, padding: "10px 28px", borderRadius: 50,
+-                                    background: "#9B0424", color: "#fff", border: "none",
+-                                    fontWeight: 600, cursor: "pointer", fontSize: 14,
+-                                    fontFamily: "Rubik, sans-serif",
+-                                }}
+-                            >
+-                                ΓåÉ Go Back
+-                            </button>
+-                        </div>
+-                    ) : (
+-                        <>
+-                            {/* ΓöÇΓöÇ Cover Card ΓöÇΓöÇ */}
+-                            <div style={{
+-                                width: "100%", height: 205, borderRadius: 28,
+-                                marginBottom: 24, boxShadow: "0 4px 14px rgba(0,0,0,0.1)",
+-                                overflow: "hidden", position: "relative",
+-                                background: "linear-gradient(135deg, #601000 0%, #9C0425 100%)",
+-                                display: "flex", flexDirection: "column",
+-                                alignItems: "center", justifyContent: "center",
+-                            }}>
+-                                <div style={{
+-                                    width: 80, height: 80, borderRadius: 40,
+-                                    background: "rgba(255,255,255,0.2)",
+-                                    display: "flex", alignItems: "center", justifyContent: "center",
+-                                    fontWeight: 900, fontSize: 32, color: "#fff",
+-                                    marginBottom: 10, letterSpacing: 1,
+-                                }}>
+-                                    {initials}
+-                                </div>
+-                                <p style={{
+-                                    color: "#fff", fontWeight: 700,
+-                                    fontSize: 18, margin: 0,
+-                                    fontFamily: "Rubik, sans-serif"
+-                                }}>
+-                                    {fullName}
+-                                </p>
+-                                <p style={{
+-                                    color: "rgba(255,255,255,0.7)",
+-                                    fontSize: 12, margin: "4px 0 0",
+-                                    fontFamily: "Rubik, sans-serif"
+-                                }}>
+-                                    {val(u.platformId)} ┬╖ {val(u.gender)}
+-                                </p>
+-
+-                                {/* Status badge */}
+-                                <div style={{
+-                                    position: "absolute", top: 12, right: 12,
+-                                    padding: "4px 12px", borderRadius: 20,
+-                                    fontSize: 11, fontWeight: 700,
+-                                    background: u.status === 1 ? "#22c55e" : "#f59e0b",
+-                                    color: "#fff",
+-                                }}>
+-                                    {u.status === 1 ? "Active" : "Inactive"}
+-                                </div>
+-                            </div>
+-
+-                            <div style={{ background: "#ffffff" }}>
+-
+-                                {/* Bio */}
+-                                <p style={{
+-                                    fontFamily: "Rubik, sans-serif", fontWeight: 400,
+-                                    fontSize: 14, lineHeight: "160%",
+-                                    textAlign: "justify", color: "#555",
+-                                    marginBottom: 24, padding: "0 2px"
+-                                }}>
+-                                    {val(u.aboutMe, "No bio added yet.")}
+-                                </p>
+-
+-                                {/* ΓöÇΓöÇ Basic Details ΓöÇΓöÇ */}
+-                                <Section title="Basic Details" rows={[
+-                                    ["ID", u.platformId],
+-                                    ["Name", fullName],
+-                                    ["Mobile", u.mobileNumber
+-                                        ? `${u.countryCode || "+91"} ${u.mobileNumber}`
+-                                        : undefined],
+-                                    ["Email", u.email],
+-                                    ["Age", u.age],
+-                                    ["Date of Birth", u.birthDate],
+-                                    ["Gender", u.gender],
+-                                    ["Religion", u.religionName],
+-                                    ["Caste", u.castName],
+-                                    ["Sub-Caste", u.subcastName],
+-                                    ["Marital Status", u.maritalStatus],
+-                                    ["Mother Tongue", u.mothertongueName],
+-                                    ["Children", u.childStatus === "Yes"
+-                                        ? `Yes (${u.numberOfChildrens})`
+-                                        : u.childStatus],
+-                                    ["Height", u.heightFeet
+-                                        ? `${u.heightFeet}' ${u.heightInches}"`
+-                                        : u.userHeight],
+-                                    ["Weight", u.userWeight ? `${u.userWeight} kg` : undefined],
+-                                    ["Disability", u.anyDisability],
+-                                    ["Location", [u.cityName, u.stateName, u.countryName]
+-                                        .filter(Boolean).join(", ")],
+-                                    ["Profile Complete", u.profileCompleteness
+-                                        ? `${u.profileCompleteness}%`
+-                                        : undefined],
+-                                ]} />
+-
+-                                {/* ΓöÇΓöÇ Education ΓöÇΓöÇ */}
+-                                <Section title="Education" rows={[
+-                                    ["Level", u.educationLevelName],
+-                                    ["Field", u.educationFieldName],
+-                                    ["College", u.collegeName],
+-                                ]} />
+-
+-                                {/* ΓöÇΓöÇ Work & Package ΓöÇΓöÇ */}
+-                                <Section title="Work & Package" rows={[
+-                                    ["Employer", u.employerName],
+-                                    ["Category", u.categoryName],
+-                                    ["Role", u.subcategoryName],
+-                                    ["Working With", u.workingWithName],
+-                                    ["Annual Income", u.annualIncomeName],
+-                                    ["Currency", u.currencyType],
+-                                ]} />
+-
+-                                {/* ΓöÇΓöÇ Lifestyle ΓöÇΓöÇ */}
+-                                <Section title="Lifestyle & Appearance" rows={[
+-                                    ["Diet", u.diet],
+-                                    ["Smoke", u.smoke],
+-                                    ["Drink", u.drink],
+-                                    ["Body Type", u.bodyType],
+-                                    ["Skin Tone", u.skinTone],
+-                                ]} />
+-
+-                                {/* ΓöÇΓöÇ Back Button ΓöÇΓöÇ */}
+-                                <button
+-                                    onClick={() => navigate(-1)}
+-                                    style={{
+-                                        width: "80%", display: "flex",
+-                                        alignItems: "center", justifyContent: "center",
+-                                        margin: "32px auto 40px", padding: 14,
+-                                        fontSize: 15, fontWeight: 600,
+-                                        color: "#fff", background: "#9B0424",
+-                                        border: "none", borderRadius: 50,
+-                                        cursor: "pointer",
+-                                        boxShadow: "0 4px 14px rgba(155,4,36,0.3)",
+-                                        fontFamily: "Rubik, sans-serif",
+-                                    }}
+-                                >
+-                                    ΓåÉ Back
+-                                </button>
+-                            </div>
+-                        </>
+-                    )}
+-                </div>
++                {/* Right Arrow */}
++                {slideCount > 1 && (
++                  <button
++                    onClick={goToNext}
++                    style={{
++                      position: "absolute", right: "12px", top: "50%",
++                      transform: "translateY(-50%)",
++                      background: "rgba(0,0,0,0.5)", color: "white",
++                      border: "none", width: "36px", height: "36px",
++                      borderRadius: "50%", display: "flex",
++                      alignItems: "center", justifyContent: "center",
++                      cursor: "pointer", zIndex: 10, fontSize: 18,
++                    }}
++                  >
++                    ΓåÆ
++                  </button>
++                )}
++              </div>
+ 
+-                {/* Home Indicator */}
++              {/* Dots */}
++              {slideCount > 1 && (
+                 <div style={{
+-                    display: "flex", justifyContent: "center",
+-                    paddingBottom: 12, background: "#ffffff", flexShrink: 0,
++                  display: "flex", justifyContent: "center",
++                  gap: "10px", marginTop: "12px"
+                 }}>
+-                    <div style={{
+-                        width: 120, height: 4,
+-                        borderRadius: 2, background: "#ccc"
+-                    }} />
++                  {Array.from({ length: slideCount }).map((_, index) => (
++                    <button
++                      key={index}
++                      onClick={() => setCurrentSlide(index)}
++                      style={{
++                        width: "11px", height: "11px", borderRadius: "50%",
++                        backgroundColor: currentSlide === index ? "#9B0424" : "#d1d5db",
++                        border: "none", cursor: "pointer",
++                      }}
++                    />
++                  ))}
+                 </div>
++              )}
+             </div>
+ 
+-            <style>{`
++            {/* ΓöÇΓöÇ Profile Content ΓöÇΓöÇ */}
++            <div style={{
++              flex: 1, padding: "20px 16px 30px",
++              background: "#ffffff",
++              fontFamily: "Rubik, sans-serif",
++              fontWeight: 500, fontSize: "14px",
++              lineHeight: "160%", color: "#000"
++            }}>
++
++              {/* ΓöÇΓöÇ Basic Details ΓöÇΓöÇ */}
++              <h3 style={{ color: "#601000", fontSize: "16px", fontWeight: 700, marginBottom: 8, marginTop: 0 }}>
++                Basic Details
++              </h3>
++              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
++                <div><span style={{ color: "#bd201c" }}>ID:</span> {val(u.platformId)}</div>
++                <div><span style={{ color: "#bd201c" }}>Name:</span> {fullName}</div>
++                <div><span style={{ color: "#bd201c" }}>Mobile:</span> {u.mobileNumber ? `${u.countryCode || "+91"} ${u.mobileNumber}` : "ΓÇö"}</div>
++                <div><span style={{ color: "#bd201c" }}>Email:</span> {val(u.email)}</div>
++                <div><span style={{ color: "#bd201c" }}>Age:</span> {val(u.age)}</div>
++                <div><span style={{ color: "#bd201c" }}>Date of Birth:</span> {val(u.birthDate)}</div>
++                <div><span style={{ color: "#bd201c" }}>Gender:</span> {val(u.gender)}</div>
++                <div><span style={{ color: "#bd201c" }}>Religion:</span> {val(u.religionName)}</div>
++                <div><span style={{ color: "#bd201c" }}>Caste:</span> {val(u.castName)}</div>
++                <div><span style={{ color: "#bd201c" }}>Sub-Caste:</span> {val(u.subcastName)}</div>
++                <div><span style={{ color: "#bd201c" }}>Marital Status:</span> {val(u.maritalStatus)}</div>
++                <div><span style={{ color: "#bd201c" }}>Mother Tongue:</span> {val(u.mothertongueName)}</div>
++                <div><span style={{ color: "#bd201c" }}>Height:</span> {u.heightFeet ? `${u.heightFeet} ft ${u.heightInches} in` : val(u.userHeight)}</div>
++                <div><span style={{ color: "#bd201c" }}>Weight:</span> {u.userWeight ? `${u.userWeight} kgs` : "ΓÇö"}</div>
++                <div><span style={{ color: "#bd201c" }}>Disability:</span> {val(u.anyDisability)}</div>
++                <div><span style={{ color: "#bd201c" }}>Location:</span> {[u.cityName, u.stateName, u.countryName].filter(Boolean).join(", ") || "ΓÇö"}</div>
++              </div>
++
++              <hr style={{ borderTop: "1px solid #e0e0e0", margin: "16px 0" }} />
++
++              {/* ΓöÇΓöÇ Education ΓöÇΓöÇ */}
++              <h3 style={{ color: "#601000", fontSize: "16px", fontWeight: 700, marginBottom: 8 }}>
++                Education
++              </h3>
++              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
++                <div><span style={{ color: "#bd201c" }}>Level:</span> {val(u.educationLevelName)}</div>
++                <div><span style={{ color: "#bd201c" }}>Field:</span> {val(u.educationFieldName)}</div>
++                <div><span style={{ color: "#bd201c" }}>College:</span> {val(u.collegeName)}</div>
++              </div>
++
++              <hr style={{ borderTop: "1px solid #e0e0e0", margin: "16px 0" }} />
++
++              {/* ΓöÇΓöÇ Work & Package ΓöÇΓöÇ */}
++              <h3 style={{ color: "#601000", fontSize: "16px", fontWeight: 700, marginBottom: 8 }}>
++                Work and Package
++              </h3>
++              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
++                <div><span style={{ color: "#bd201c" }}>Designation:</span> {val(u.subcategoryName)}</div>
++                <div><span style={{ color: "#bd201c" }}>Company:</span> {val(u.employerName)}</div>
++                <div><span style={{ color: "#bd201c" }}>Category:</span> {val(u.categoryName)}</div>
++                <div><span style={{ color: "#bd201c" }}>Working With:</span> {val(u.workingWithName)}</div>
++                <div><span style={{ color: "#bd201c" }}>Package:</span> {val(u.annualIncomeName)}</div>
++              </div>
++
++              <hr style={{ borderTop: "1px solid #e0e0e0", margin: "16px 0" }} />
++
++              {/* ΓöÇΓöÇ Lifestyle ΓöÇΓöÇ */}
++              <h3 style={{ color: "#601000", fontSize: "16px", fontWeight: 700, marginBottom: 8 }}>
++                Lifestyle
++              </h3>
++              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
++                <div><span style={{ color: "#bd201c" }}>Diet:</span> {val(u.diet)}</div>
++                <div><span style={{ color: "#bd201c" }}>Smoke:</span> {val(u.smoke)}</div>
++                <div><span style={{ color: "#bd201c" }}>Drink:</span> {val(u.drink)}</div>
++                <div><span style={{ color: "#bd201c" }}>Body Type:</span> {val(u.bodyType)}</div>
++                <div><span style={{ color: "#bd201c" }}>Skin Tone:</span> {val(u.skinTone)}</div>
++              </div>
++
++              {/* ΓöÇΓöÇ Close Button ΓöÇΓöÇ */}
++              <button
++                onClick={() => navigate(-1)}
++                style={{
++                  width: "80%", margin: "40px auto 30px",
++                  padding: "14px", fontSize: "15px", fontWeight: 600,
++                  color: "#fff", background: "#9B0424",
++                  border: "none", borderRadius: 50,
++                  cursor: "pointer", display: "block",
++                  fontFamily: "Rubik, sans-serif",
++                  boxShadow: "0 4px 14px rgba(155,4,36,0.3)",
++                }}
++              >
++                Close
++              </button>
++            </div>
++          </>
++        )}
++
++        {/* ΓöÇΓöÇ Home Indicator ΓöÇΓöÇ */}
++        <div style={{
++          display: "flex", justifyContent: "center",
++          paddingBottom: 12, background: "#ffffff"
++        }}>
++          <div style={{ width: 120, height: 4, borderRadius: 2, background: "#ccc" }} />
++        </div>
++      </div>
++
++      <style>{`
+         @keyframes pd-pulse {
+           0%, 100% { opacity: 1; }
+-          50%       { opacity: 0.4; }
++          50% { opacity: 0.4; }
+         }
+       `}</style>
+-        </div>
+-    );
++    </div>
++  );
+ }
+\ No newline at end of file

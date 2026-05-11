@@ -4,6 +4,15 @@ import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../../features/auth/Authslice";
 
+// ─── Design Tokens for Sidebar ────────────────────────────────────────────────
+const theme = {
+  primary: "#bd201c",
+  primaryDark: "#601000",
+  primaryLight: "#fef2f2",
+  textMuted: "#9ca3af",
+  textHover: "#bd201c",
+};
+
 // ─── Navigation Items ─────────────────────────────────────────────────────────
 const NAV_ITEMS = [
   {
@@ -19,9 +28,6 @@ const NAV_ITEMS = [
       { label: "Performance", to: "/admin/dashboard/performance" },
     ],
   },
-
-
-
   {
     label: "Management & Moderation",
     icon: (
@@ -32,17 +38,10 @@ const NAV_ITEMS = [
     children: [
       { label: "User Management", to: "/admin/requests" },
       { label: "Location Management", to: "/admin/locations" },
-      // {label: "Marital Status Management", to: "/admin/marital-status" },
       { label: "Education Management", to: "/admin/education" },
-      // { label: "Income Management", to: "/admin/income" },
-      // { label: "Diet Management", to: "/admin/diet" },
-      // {label: "Body & Skin Management", to: "/admin/body-skin" },
-      // { label: "Working Category Management", to: "/admin/working-category" },
-      // { label: "Mother Tongue Management", to: "/admin/mothertongue" },
       { label: "Currency Management", to: "/admin/currency" },
     ],
   },
-
   {
     label: "Religion & Community",
     to: "/admin/religion",
@@ -55,20 +54,15 @@ const NAV_ITEMS = [
       </svg>
     ),
   },
-
   {
     label: "Sub Admin Management",
     to: "/admin/sub-admins",
     icon: (
       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M17 21v-4H7v4" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 7v6" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 10h6" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
       </svg>
     ),
   },
-
   {
     label: "Reports & Moderation",
     icon: (
@@ -152,10 +146,10 @@ function NavGroup({ item, onClose, isMobile, depth = 0 }) {
     return "pl-14";
   };
 
-  const getActiveBorderClass = () => {
-    if (depth === 0) return "border-l-2 border-fuchsia-500";
-    if (depth === 1) return "border-l-2 border-fuchsia-400";
-    return "border-l-2 border-fuchsia-300";
+  const getActiveBorderColor = () => {
+    if (depth === 0) return theme.primary;
+    if (depth === 1) return theme.primary;
+    return "#fca5a5";
   };
 
   // ── Direct link (no children) ─────────────────────────────────────────────
@@ -166,21 +160,26 @@ function NavGroup({ item, onClose, isMobile, depth = 0 }) {
         onClick={() => isMobile && onClose?.()}
         className={({ isActive }) =>
           `flex items-center gap-2 ${getPaddingClass()} py-2 rounded-lg text-sm font-medium transition-all duration-200 my-0.5 ${isActive
-            ? `bg-gradient-to-r from-fuchsia-50 to-transparent text-fuchsia-700 shadow-sm ${getActiveBorderClass()}`
-            : "text-gray-600 hover:bg-gray-100 hover:text-fuchsia-600"
+            ? "shadow-sm border-l-2"
+            : "text-gray-600 hover:bg-gray-100"
           }`
         }
+        style={({ isActive }) => ({
+          borderColor: isActive ? getActiveBorderColor() : "transparent",
+          backgroundColor: isActive ? theme.primaryLight : "",
+          color: isActive ? theme.primary : "",
+        })}
       >
         {({ isActive }) => (
           <>
             {item.icon && (
-              <span className={`transition-all duration-200 ${isActive ? "text-fuchsia-600" : "text-gray-400"}`}>
+              <span className={`transition-all duration-200`} style={{ color: isActive ? theme.primary : theme.textMuted }}>
                 {item.icon}
               </span>
             )}
-            <span className="flex-1">{item.label}</span>
+            <span className="flex-1 transition-colors hover:text-[#bd201c]">{item.label}</span>
             {item.badge && (
-              <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded-full bg-fuchsia-100 text-fuchsia-700">
+              <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full" style={{ backgroundColor: "#fecaca", color: theme.primaryDark }}>
                 {item.badge}
               </span>
             )}
@@ -196,22 +195,23 @@ function NavGroup({ item, onClose, isMobile, depth = 0 }) {
       <button
         onClick={() => setOpen(v => !v)}
         className={`w-full flex items-center gap-2 ${getPaddingClass()} py-2 rounded-lg text-sm font-medium transition-all duration-200 ${open || isParentActive
-            ? "text-fuchsia-700 bg-gray-100/80"
-            : "text-gray-600 hover:bg-gray-100 hover:text-fuchsia-600"
+            ? "bg-gray-100/80"
+            : "text-gray-600 hover:bg-gray-100"
           }`}
+        style={{ color: open || isParentActive ? theme.primaryDark : "" }}
       >
         {item.icon && (
-          <span className={`transition-all duration-200 ${open || isParentActive ? "text-fuchsia-600" : "text-gray-400"}`}>
+          <span className={`transition-all duration-200`} style={{ color: open || isParentActive ? theme.primary : theme.textMuted }}>
             {item.icon}
           </span>
         )}
-        <span className="flex-1 text-left font-medium">{item.label}</span>
+        <span className="flex-1 text-left font-medium transition-colors hover:text-[#bd201c]">{item.label}</span>
         {item.badge && (
-          <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded-full bg-fuchsia-500 text-white mr-1">
+          <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full text-white mr-1" style={{ backgroundColor: theme.primary }}>
             {item.badge}
           </span>
         )}
-        <span className={`transition-all duration-300 mr-1 ${open || isParentActive ? "text-fuchsia-500" : "text-gray-400"}`}>
+        <span className={`transition-all duration-300 mr-1`} style={{ color: open || isParentActive ? theme.primary : theme.textMuted }}>
           <Chevron open={open} />
         </span>
       </button>
@@ -243,23 +243,23 @@ function SidebarContent({ onClose, isMobile }) {
   const { user } = useSelector(s => s.auth);
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-t-4xl font-['Inter',system-ui,-apple-system,sans-serif]">
+    <div className="flex flex-col h-full bg-white rounded-t-4xl font-[Inter,sans-serif]">
       {/* Logo */}
       <div className="px-5 py-6 border-b border-gray-100 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-fuchsia-500 to-fuchsia-600 flex items-center justify-center shadow-md">
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-md" style={{ background: `linear-gradient(135deg, ${theme.primaryDark}, ${theme.primary})` }}>
           <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
           </svg>
         </div>
         <div>
-          <h1 className="text-gray-800 font-bold text-lg tracking-tight">BandhanSetu</h1>
-          <p className="text-fuchsia-500 text-xs font-medium mt-0.5">Matrimony Admin</p>
+          <h1 className="text-gray-900 font-extrabold text-lg tracking-tight">BandhanSetu</h1>
+          <p className="text-xs font-bold mt-0.5" style={{ color: theme.primary }}>Matrimony Admin</p>
         </div>
       </div>
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-5 overflow-y-auto">
-        <p className="text-fuchsia-400 text-[10px] font-semibold uppercase tracking-wider px-3 mb-3">
+        <p className="text-[10px] font-bold uppercase tracking-wider px-3 mb-3" style={{ color: theme.primary }}>
           Main Navigation
         </p>
         {NAV_ITEMS.map(item => (
@@ -269,21 +269,21 @@ function SidebarContent({ onClose, isMobile }) {
 
       {/* User Profile & Logout */}
       <div className="px-3 py-4 border-t border-gray-100 mt-2">
-        <div className="flex items-center gap-3 px-3 py-3 rounded-xl bg-gradient-to-r from-fuchsia-50 to-purple-50 mb-3">
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-fuchsia-500 to-fuchsia-600 flex items-center justify-center text-white font-bold text-sm shadow-md">
+        <div className="flex items-center gap-3 px-3 py-3 rounded-xl mb-3" style={{ backgroundColor: theme.primaryLight }}>
+          <div className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md" style={{ background: `linear-gradient(135deg, ${theme.primaryDark}, ${theme.primary})` }}>
             {user?.name?.[0]?.toUpperCase() || "A"}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-gray-800 text-sm font-semibold truncate">{user?.name || "Admin User"}</p>
-            <p className="text-fuchsia-500 text-xs truncate">{user?.email || "admin@bandhan.com"}</p>
+            <p className="text-gray-900 text-sm font-bold truncate">{user?.name || "Admin User"}</p>
+            <p className="text-xs truncate" style={{ color: theme.primary }}>{user?.email || "admin@bandhan.com"}</p>
           </div>
           <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-sm shadow-emerald-200 animate-pulse" />
         </div>
         <button
           onClick={() => { dispatch(logout()); navigate("/login"); }}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:text-red-600 hover:bg-red-50 transition-all duration-200 group"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-gray-600 hover:text-red-600 hover:bg-red-50 transition-all duration-200 group"
         >
-          <svg className="w-4 h-4 transition-colors group-hover:text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="w-4 h-4 transition-colors group-hover:text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
               d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
           </svg>
@@ -310,10 +310,10 @@ export default function Sidebar({ isOpen, onClose }) {
           <aside className="relative w-80 max-w-[85vw] h-full bg-white shadow-2xl z-10 flex flex-col animate-slide-in-right rounded-r-3xl">
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 p-2 rounded-xl text-gray-400 hover:text-fuchsia-600 hover:bg-fuchsia-50 transition-all z-10"
+              className="absolute top-4 right-4 p-2 rounded-xl text-gray-400 transition-all z-10 hover:bg-[#fef2f2] hover:text-[#bd201c]"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
             <SidebarContent onClose={onClose} isMobile={true} />

@@ -18,7 +18,7 @@ const pageTitles = {
   "/admin/notifications/target": "Target Specific Users",
   "/admin/notifications/scheduled": "Scheduled Notifications",
   "/admin/notifications/status": "Read Status",
-  "/admin/profile": "My Profile",
+  "/admin/admin-profile": "My Profile",
 };
 
 export default function Navbar({ onMenuClick }) {
@@ -34,17 +34,17 @@ export default function Navbar({ onMenuClick }) {
      "Dashboard");
 
   const handleProfileClick = () => {
-    navigate("/admin/profile");
+    navigate("/admin/admin-profile");
   };
 
   return (
-    <header className="bg-white border-b border-gray-100 px-4 sm:px-6 py-3 flex items-center justify-between gap-4 sticky top-0 z-30 shadow-sm">
+    <header className="bg-white border-b border-gray-100 px-4 sm:px-6 py-3 flex items-center justify-between gap-4 sticky top-0 z-30 shadow-sm font-[Inter,sans-serif]">
       {/* Left Side - Logo + Title */}
       <div className="flex items-center gap-4">
         {/* Mobile Menu Button */}
         <button
           onClick={onMenuClick}
-          className="lg:hidden p-2 rounded-xl text-gray-500 hover:bg-gray-100 transition-colors"
+          className="lg:hidden p-2 rounded-xl text-gray-500 hover:bg-[#fef2f2] hover:text-[#bd201c] transition-colors"
           aria-label="Open sidebar"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -54,33 +54,33 @@ export default function Navbar({ onMenuClick }) {
 
         {/* Page Title */}
         <div className="hidden sm:block pl-6 border-l border-gray-200">
-          <h1 className="text-lg font-semibold text-gray-800">{title}</h1>
+          <h1 className="text-lg font-bold text-gray-900 tracking-tight">{title}</h1>
         </div>
       </div>
 
       {/* Right Side */}
       <div className="flex items-center gap-2 sm:gap-4">
         {/* Search Bar */}
-        <div className="hidden md:flex items-center bg-gray-50 border border-gray-200 rounded-2xl px-4 py-2 w-56 lg:w-72 focus-within:border-purple-400 focus-within:ring-1 focus-within:ring-purple-200 transition-all">
-          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        <div className="hidden md:flex items-center bg-gray-50 border border-gray-200 rounded-2xl px-4 py-2 w-56 lg:w-72 focus-within:border-[#fca5a5] focus-within:ring-4 focus-within:ring-[#fef2f2] transition-all focus-within:bg-white group">
+          <svg className="w-4 h-4 text-gray-400 group-focus-within:text-[#bd201c] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           <input
             type="text"
-            placeholder="Search…"
-            className="ml-3 bg-transparent text-sm outline-none placeholder-gray-400 w-full"
+            placeholder="Search..."
+            className="ml-3 bg-transparent text-sm outline-none placeholder-gray-400 w-full font-medium"
           />
         </div>
 
         {/* Icons */}
-        <button className="p-2.5 rounded-2xl text-gray-500 hover:bg-gray-100 transition-colors relative">
+        <button className="p-2.5 rounded-2xl text-gray-500 hover:bg-[#fef2f2] hover:text-[#bd201c] transition-colors relative">
           <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
           </svg>
-          <span className="absolute top-2 right-2 w-2 h-2 bg-fuchsia-500 rounded-full ring-2 ring-white"></span>
+          <span className="absolute top-2 right-2 w-2 h-2 bg-[#bd201c] rounded-full ring-2 ring-white"></span>
         </button>
 
-        <button className="p-2.5 rounded-2xl text-gray-500 hover:bg-gray-100 transition-colors">
+        <button className="p-2.5 rounded-2xl text-gray-500 hover:bg-[#fef2f2] hover:text-[#bd201c] transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14v6m-3-3h6M6 10h2a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v2a2 2 0 002 2zm10 0h2a2 2 0 002-2v-2a2 2 0 00-2-2h-2a2 2 0 00-2 2v2a2 2 0 002 2zM6 20h2a2 2 0 002-2v-2a2 2 0 00-2-2H6a2 2 0 00-2 2v2a2 2 0 002 2" />
           </svg>
@@ -88,15 +88,15 @@ export default function Navbar({ onMenuClick }) {
 
         {/* User Profile - Made clickable */}
         <div 
-          className="flex items-center gap-3 pl-4 border-l border-gray-200 cursor-pointer hover:opacity-80 transition-opacity"
+          className="flex items-center gap-3 pl-4 border-l border-gray-200 cursor-pointer group"
           onClick={handleProfileClick}
         >
           <div className="text-right hidden sm:block">
-            <p className="text-sm font-semibold text-gray-800 leading-none">{user?.name || "Admin"}</p>
-            <p className="text-xs text-gray-400">Administrator</p>
+            <p className="text-sm font-bold text-gray-900 leading-none group-hover:text-[#bd201c] transition-colors">{user?.name || "Admin"}</p>
+            <p className="text-xs font-semibold text-gray-400 mt-1">Administrator</p>
           </div>
 
-          <div className="w-9 h-9 rounded-2xl overflow-hidden ring-2 ring-purple-100">
+          <div className="w-10 h-10 rounded-2xl overflow-hidden ring-2 ring-[#fef2f2] group-hover:ring-[#fca5a5] transition-all shadow-sm">
             <img
               src="https://i.pravatar.cc/128?u=laura" 
               alt="Profile"

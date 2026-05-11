@@ -3,11 +3,11 @@ import { useState, useRef, useEffect } from "react";
 
 // ─── Design Tokens ────────────────────────────────────────────────────────────
 const C = {
-  primary:       "#e990e8",
+  primary:       "#bd201c",
   primaryDark:   "#da0eed",
-  primaryLight:  "#fdf4ff",
-  primaryMid:    "#fae8ff",
-  primaryBorder: "#f0abfc",
+  primaryLight:  "#fef2f2",
+  primaryMid:    "#fee2e2",
+  primaryBorder: "#fca5a5",
   active:        "#44e0ae",
   activeBg:      "#ecfdf5",
   activeBorder:  "#a7f3d0",
@@ -97,7 +97,7 @@ function Avatar({ name, id, size = 36, src, muted = false }) {
 function Badge({ children, variant = "default", className = "" }) {
   const variants = {
     default: "bg-gray-100 text-gray-600",
-    primary: "bg-fuchsia-50 text-fuchsia-700",
+    primary: "bg-red-50 text-red-700",
     success: "bg-emerald-50 text-emerald-700",
     warning: "bg-amber-50 text-amber-700",
     error: "bg-red-50 text-red-700",
@@ -297,14 +297,14 @@ function SubAdminFormModal({ isOpen, onClose, existing, onSave }) {
               <label className="block text-xs font-semibold mb-1.5" style={{ color: C.textSecondary }}>Full Name <span className="text-red-500">*</span></label>
               <input type="text" value={form.name} placeholder="Rahul Sharma"
                 onChange={(e) => { setForm((f) => ({ ...f, name: e.target.value })); setErrors((e2) => ({ ...e2, name: "" })); }}
-                className={`w-full px-3.5 py-2.5 text-sm bg-gray-50 border rounded-lg outline-none transition-all focus:bg-white ${errors.name ? "border-red-400 ring-1 ring-red-400" : "border-gray-200 focus:border-fuchsia-300 focus:ring-1 focus:ring-fuchsia-200"}`} />
+                className={`w-full px-3.5 py-2.5 text-sm bg-gray-50 border rounded-lg outline-none transition-all focus:bg-white ${errors.name ? "border-red-400 ring-1 ring-red-400" : "border-gray-200 focus:border-red-300 focus:ring-1 focus:ring-red-200"}`} />
               {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
             </div>
             <div>
               <label className="block text-xs font-semibold mb-1.5" style={{ color: C.textSecondary }}>Email <span className="text-red-500">*</span></label>
               <input type="email" value={form.email} placeholder="admin@bandhan.com"
                 onChange={(e) => { setForm((f) => ({ ...f, email: e.target.value })); setErrors((e2) => ({ ...e2, email: "" })); }}
-                className={`w-full px-3.5 py-2.5 text-sm bg-gray-50 border rounded-lg outline-none transition-all focus:bg-white ${errors.email ? "border-red-400 ring-1 ring-red-400" : "border-gray-200 focus:border-fuchsia-300 focus:ring-1 focus:ring-fuchsia-200"}`} />
+                className={`w-full px-3.5 py-2.5 text-sm bg-gray-50 border rounded-lg outline-none transition-all focus:bg-white ${errors.email ? "border-red-400 ring-1 ring-red-400" : "border-gray-200 focus:border-red-300 focus:ring-1 focus:ring-red-200"}`} />
               {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
             </div>
           </div>
@@ -314,7 +314,7 @@ function SubAdminFormModal({ isOpen, onClose, existing, onSave }) {
               <label className="block text-xs font-semibold mb-1.5" style={{ color: C.textSecondary }}>Phone <span className="text-red-500">*</span></label>
               <input type="text" value={form.phone} placeholder="+91 98765 43210"
                 onChange={(e) => { setForm((f) => ({ ...f, phone: e.target.value })); setErrors((e2) => ({ ...e2, phone: "" })); }}
-                className={`w-full px-3.5 py-2.5 text-sm bg-gray-50 border rounded-lg outline-none transition-all focus:bg-white ${errors.phone ? "border-red-400 ring-1 ring-red-400" : "border-gray-200 focus:border-fuchsia-300 focus:ring-1 focus:ring-fuchsia-200"}`} />
+                className={`w-full px-3.5 py-2.5 text-sm bg-gray-50 border rounded-lg outline-none transition-all focus:bg-white ${errors.phone ? "border-red-400 ring-1 ring-red-400" : "border-gray-200 focus:border-red-300 focus:ring-1 focus:ring-red-200"}`} />
               {errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone}</p>}
             </div>
             <div>
@@ -343,7 +343,7 @@ function SubAdminFormModal({ isOpen, onClose, existing, onSave }) {
               placeholder="Full address with street, city, state, pin code"
               onChange={(e) => { setForm((f) => ({ ...f, address: e.target.value })); setErrors((e2) => ({ ...e2, address: "" })); }}
               rows="3"
-              className={`w-full px-3.5 py-2.5 text-sm bg-gray-50 border rounded-lg outline-none transition-all focus:bg-white resize-none ${errors.address ? "border-red-400 ring-1 ring-red-400" : "border-gray-200 focus:border-fuchsia-300 focus:ring-1 focus:ring-fuchsia-200"}`}
+              className={`w-full px-3.5 py-2.5 text-sm bg-gray-50 border rounded-lg outline-none transition-all focus:bg-white resize-none ${errors.address ? "border-red-400 ring-1 ring-red-400" : "border-gray-200 focus:border-red-300 focus:ring-1 focus:ring-red-200"}`}
             />
             {errors.address && <p className="text-xs text-red-500 mt-1">{errors.address}</p>}
           </div>
@@ -525,7 +525,7 @@ function SubAdminRow({ admin, onView, onEdit, onDelete, onToggleStatus, index })
       style={{ borderColor: C.border, animation: "rowIn .2s ease both", animationDelay: `${index * 30}ms` }}
       onClick={onView}
     >
-      <div className="w-0.5 h-10 rounded-full bg-transparent group-hover:bg-fuchsia-400 transition-colors" />
+      <div className="w-0.5 h-10 rounded-full bg-transparent group-hover:bg-red-400 transition-colors" />
       <Avatar name={admin.name} id={admin.id} size={44} src={admin.avatar} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
@@ -666,7 +666,7 @@ export default function SubAdminManagement() {
           </svg>
           <input type="text" placeholder="Search by name, email or address…" value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-10 py-2.5 text-sm bg-white border rounded-lg outline-none shadow-sm transition-all focus:border-fuchsia-300 focus:ring-2 focus:ring-fuchsia-100"
+            className="w-full pl-10 pr-10 py-2.5 text-sm bg-white border rounded-lg outline-none shadow-sm transition-all focus:border-red-300 focus:ring-2 focus:ring-red-100"
             style={{ borderColor: C.border }} />
           {search && (
             <button onClick={() => setSearch("")}

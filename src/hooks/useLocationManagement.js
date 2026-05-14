@@ -28,7 +28,8 @@ export const LOCATION_KEYS = {
 const fetchCountries = async () => {
   const res = await fetch(`${BASE_URL}/api/auth/admin/country`, { headers: getAuthHeaders() });
   const json = await handleResponse(res);
-  return json.countries || [];
+  // Handle both: direct array OR wrapped in { countries: [...] }
+  return Array.isArray(json) ? json : (json.countries || []);
 };
 
 export const useGetCountries = () =>

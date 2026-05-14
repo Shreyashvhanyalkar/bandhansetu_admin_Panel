@@ -13,8 +13,8 @@ import ReligionManagement from "./pages/admin/ReligionManagement";
 import SubAdminManagement from "./pages/admin/SubAdminManagement";
 import AdminProfile from "./pages/admin/profile";
 import LocationManagement from "./pages/admin/LocationManagement";
-import EducationManagement from "./pages/admin/EducationManagement";
-import CurrencyManagement from "./pages/admin/CurrencyManagement";
+// import EducationManagement from "./pages/admin/EducationManagement";
+// import CurrencyManagement from "./pages/admin/CurrencyManagement";
 import ProfileDetails from "./pages/admin/profileDetails"; // ← user profile view
 
 // Uncomment as you enable these pages:
@@ -83,13 +83,13 @@ export default function App() {
           <Route path="religion/*" element={<ReligionManagement />} />
 
           {/* Education */}
-          <Route path="education" element={<EducationManagement />} />
+          {/* <Route path="education" element={<EducationManagement />} /> */}
 
           {/* Sub Admins */}
           <Route path="sub-admins" element={<SubAdminManagement />} />
 
           {/* Currency */}
-          <Route path="currency" element={<CurrencyManagement />} />
+          {/* <Route path="currency" element={<CurrencyManagement />} /> */}
 
           {/* Reports & Notifications */}
           <Route path="reports/*" element={<Reports />} />

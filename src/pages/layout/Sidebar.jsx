@@ -1,8 +1,8 @@
 // components/admin/Sidebar.jsx
 import { useState, useEffect } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
-import { logout } from "../../features/auth/Authslice";
+import { useSelector } from "react-redux";
+import { useLogout } from "../../hooks/useAuthMutations";
 
 // ─── Design Tokens for Sidebar ────────────────────────────────────────────────
 const theme = {
@@ -38,22 +38,16 @@ const NAV_ITEMS = [
     children: [
       { label: "User Management", to: "/admin/requests" },
       { label: "Location Management", to: "/admin/locations" },
-      { label: "Education Management", to: "/admin/education" },
-      { label: "Currency Management", to: "/admin/currency" },
+      // { label: "Education Management", to: "/admin/education" },
+      // { label: "Currency Management", to: "/admin/currency" },/
+      {
+        label: "Religion & Community",
+        to: "/admin/religion",
+
+      },
     ],
   },
-  {
-    label: "Religion & Community",
-    to: "/admin/religion",
-    icon: (
-      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M17 21v-4H7v4" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 7v6" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 10h6" />
-      </svg>
-    ),
-  },
+
   {
     label: "Sub Admin Management",
     to: "/admin/sub-admins",
@@ -195,8 +189,8 @@ function NavGroup({ item, onClose, isMobile, depth = 0 }) {
       <button
         onClick={() => setOpen(v => !v)}
         className={`w-full flex items-center gap-2 ${getPaddingClass()} py-2 rounded-lg text-sm font-medium transition-all duration-200 ${open || isParentActive
-            ? "bg-gray-100/80"
-            : "text-gray-600 hover:bg-gray-100"
+          ? "bg-gray-100/80"
+          : "text-gray-600 hover:bg-gray-100"
           }`}
         style={{ color: open || isParentActive ? theme.primaryDark : "" }}
       >
@@ -238,9 +232,9 @@ function NavGroup({ item, onClose, isMobile, depth = 0 }) {
 
 // ─── Sidebar Content ──────────────────────────────────────────────────────────
 function SidebarContent({ onClose, isMobile }) {
-  const dispatch = useDispatch();
   const navigate = useNavigate();
   const { user } = useSelector(s => s.auth);
+  const logoutMutation = useLogout();
 
   return (
     <div className="flex flex-col h-full bg-white rounded-t-4xl font-[Inter,sans-serif]">
@@ -280,8 +274,9 @@ function SidebarContent({ onClose, isMobile }) {
           <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-sm shadow-emerald-200 animate-pulse" />
         </div>
         <button
-          onClick={() => { dispatch(logout()); navigate("/login"); }}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-gray-600 hover:text-red-600 hover:bg-red-50 transition-all duration-200 group"
+          onClick={() => { logoutMutation.mutate(null, { onSettled: () => navigate("/login") }); }}
+          disabled={logoutMutation.isPending}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-gray-600 hover:text-red-600 hover:bg-red-50 transition-all duration-200 group disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <svg className="w-4 h-4 transition-colors group-hover:text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}

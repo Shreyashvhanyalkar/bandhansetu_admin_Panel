@@ -22,17 +22,17 @@ const C = {
   primaryLight: "#fef2f2",   // red-50
   primaryBorder: "#fca5a5",  // red-300
   state: "#0891b2",          // Keep cyan for states to distinguish hierarchy
-  stateBg: "#ecfeff",        
-  stateBorder: "#a5f3fc",    
+  stateBg: "#ecfeff",
+  stateBorder: "#a5f3fc",
   city: "#059669",           // Keep emerald for cities
-  cityBg: "#ecfdf5",         
-  cityBorder: "#a7f3d0",     
-  danger: "#dc2626",         
-  textPrimary: "#111827",    
-  textSecondary: "#4b5563",  
-  textMuted: "#9ca3af",      
-  border: "#e5e7eb",         
-  bg: "#f8fafc",             
+  cityBg: "#ecfdf5",
+  cityBorder: "#a7f3d0",
+  danger: "#dc2626",
+  textPrimary: "#111827",
+  textSecondary: "#4b5563",
+  textMuted: "#9ca3af",
+  border: "#e5e7eb",
+  bg: "#f8fafc",
 };
 
 const initials = (name = "") =>
@@ -220,16 +220,17 @@ function StateRow({ state }) {
 
   return (
     <div className={`rounded-xl border bg-white overflow-hidden shadow-sm transition-all duration-300 ${expanded ? "border-cyan-300 ring-2 ring-cyan-50" : "border-gray-200 hover:border-gray-300"} group/state`}>
-      <div className={`flex items-center gap-4 px-5 py-4 cursor-pointer transition-colors ${expanded ? 'bg-cyan-50/20' : 'hover:bg-slate-50'}`} onClick={() => setExpanded(!expanded)}>
+      <div className={`flex items-center gap-4 px-5 py-4 cursor-pointer transition-colors ${expanded ? 'bg-cyan-50/20' : 'hover:bg-slate-50'} overflow-x-auto scrollbar-hide`} onClick={() => setExpanded(!expanded)}>
         <ChevronIcon open={expanded} />
         <Avatar name={state.state_name} size={38} bg={C.state} />
-        <span className={`text-base font-bold flex-1 transition-colors ${expanded || 'group-hover/state:text-cyan-700'}`}>{state.state_name}</span>
-        
+        <span className={`text-base font-bold flex-1 whitespace-nowrap min-w-max transition-colors ${expanded || 'group-hover/state:text-cyan-700'}`}>{state.state_name}</span>
+
         <div className="hidden sm:block">
           <Badge variant="state">State</Badge>
         </div>
 
-        <div className={`flex gap-2 transition-opacity`} onClick={(e) => e.stopPropagation()}>
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide shrink-0" onClick={(e) => e.stopPropagation()}>
+
           <button onClick={() => setShowAddCity(true)} className="hidden sm:flex items-center gap-1.5 px-3 py-2 text-xs font-bold border border-gray-200 rounded-xl bg-white text-gray-700 hover:text-emerald-600 hover:border-emerald-300 hover:bg-emerald-50 transition-all shadow-sm">
             <PlusIcon /> Add City
           </button>
@@ -249,18 +250,18 @@ function StateRow({ state }) {
               <Spinner size={16} color={C.city} /> Loading cities...
             </div>
           ) : cities.length === 0 ? (
-             <div className="text-center py-6 bg-white border border-dashed border-gray-200 rounded-xl">
-               <p className="text-gray-500 text-sm font-medium">No cities added yet.</p>
-             </div>
+            <div className="text-center py-6 bg-white border border-dashed border-gray-200 rounded-xl">
+              <p className="text-gray-500 text-sm font-medium">No cities added yet.</p>
+            </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {cities.map((city) => (
-                <div key={city.id} className="flex items-center justify-between bg-white border border-gray-200 rounded-xl p-3 shadow-sm hover:border-emerald-300 transition-colors group/city">
-                  <div className="flex items-center gap-3">
+                <div key={city.id} className="flex items-center justify-between bg-white border border-gray-200 rounded-xl p-3 shadow-sm hover:border-emerald-300 transition-colors group/city overflow-x-auto scrollbar-hide">
+                  <div className="flex items-center gap-3 min-w-max mr-2">
                     <Avatar name={city.city_name} size={30} bg={C.city} />
-                    <span className="text-sm font-semibold text-gray-800">{city.city_name}</span>
+                    <span className="text-sm font-semibold text-gray-800 whitespace-nowrap">{city.city_name}</span>
                   </div>
-                  <div className="flex gap-2 transition-opacity">
+                  <div className="flex gap-2 transition-opacity shrink-0">
                     <IconBtn onClick={() => setEditingCity(city)}><EditIcon /></IconBtn>
                     <IconBtn danger onClick={() => setDeletingCity(city)}><TrashIcon /></IconBtn>
                   </div>
@@ -296,21 +297,21 @@ function CountryCard({ country }) {
 
   return (
     <div className={`rounded-2xl border bg-white overflow-hidden shadow-sm transition-all duration-300 ${expanded ? "border-[#fca5a5] ring-2 ring-[#fef2f2]" : "border-gray-200 hover:border-gray-300 hover:shadow-md"}`}>
-      
+
       {/* Country Header */}
       <div
         onClick={() => setExpanded(!expanded)}
-        className={`flex items-center gap-4 px-6 py-5 cursor-pointer transition-colors ${expanded ? 'bg-slate-50/50' : 'hover:bg-slate-50'} group`}
+        className={`flex items-center gap-4 px-6 py-5 cursor-pointer transition-colors ${expanded ? 'bg-slate-50/50' : 'hover:bg-slate-50'} group overflow-x-auto scrollbar-hide`}
       >
         <ChevronIcon open={expanded} />
         <Avatar name={country.country_name} size={48} bg={C.primary} />
-        
-        <div className="flex-1">
-          <span className={`text-lg font-bold transition-colors ${expanded || 'group-hover:text-[#bd201c]'} text-gray-900`}>
+
+        <div className="flex-1 min-w-max">
+          <span className={`text-lg font-bold whitespace-nowrap transition-colors ${expanded || 'group-hover:text-[#bd201c]'} text-gray-900`}>
             {country.country_name}
           </span>
         </div>
-        
+
         <div className="hidden sm:block">
           <Badge variant="country">Country</Badge>
         </div>
@@ -389,7 +390,7 @@ export default function LocationManagement() {
       `}</style>
 
       <div className="max-w-5xl mx-auto space-y-6 sm:space-y-8">
-        
+
         {/* Header */}
         <div className="flex justify-between items-end flex-wrap gap-4">
           <div>
@@ -439,10 +440,10 @@ export default function LocationManagement() {
           <div className="space-y-4">
             {[...Array(3)].map((_, i) => (
               <div key={i} className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-                 <div className="flex items-center gap-4 animate-pulse">
-                    <div className="w-12 h-12 bg-gray-200 rounded-xl" />
-                    <div className="h-6 w-48 bg-gray-200 rounded" />
-                 </div>
+                <div className="flex items-center gap-4 animate-pulse">
+                  <div className="w-12 h-12 bg-gray-200 rounded-xl" />
+                  <div className="h-6 w-48 bg-gray-200 rounded" />
+                </div>
               </div>
             ))}
           </div>

@@ -42,7 +42,8 @@ export const useAllUsers = (filters = {}) => {
       }
 
       const response = await res.json();
-      const usersData = response.users || [];
+      const usersData = Array.isArray(response) ? response : response.users || [];
+
       const paginationData = response.pagination || null;
 
       const users = usersData.map((u) => ({

@@ -11,8 +11,6 @@ const getAuthHeaders = () => ({
 });
 
 // ─── Fetch user by paginating through list ────────────────────────────────────
-// No direct GET /users/:id endpoint (returns 405).
-// We page through the list with limit=100 until we find the matching id.
 const fetchUserById = async (userId) => {
     const LIMIT = 100;
     let page = 1;
@@ -29,14 +27,14 @@ const fetchUserById = async (userId) => {
         }
 
         const data = await res.json();
-        const users = data.users || [];
 
-        // Find user in this page
+        // ✅ Fix: handle plain array response
+        const users = Array.isArray(data) ? data : (data.users || []);
+        const totalPages = Array.isArray(data) ? 1 : (data.pagination?.total_pages ?? 1);
+
         const found = users.find((u) => u.id === userId);
         if (found) return found;
 
-        // Stop if last page or empty
-        const totalPages = data.pagination?.total_pages ?? 1;
         if (page >= totalPages || users.length === 0) break;
         page++;
     }

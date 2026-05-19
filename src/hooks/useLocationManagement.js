@@ -30,6 +30,8 @@ const fetchCountries = async () => {
   const json = await handleResponse(res);
   // Handle both: direct array OR wrapped in { countries: [...] }
   return Array.isArray(json) ? json : (json.countries || []);
+    console.log("First country object:", data[0]); // 👈 add this
+
 };
 
 export const useGetCountries = () =>
@@ -84,7 +86,7 @@ const fetchStatesByCountry = async (countryId) => {
   if (!countryId) return [];
   const res = await fetch(`${BASE_URL}/api/auth/admin/state?country_id=${countryId}`, { headers: getAuthHeaders() });
   const json = await handleResponse(res);
-  return json.states || [];
+  return Array.isArray(json) ? json : (json.states || []);
 };
 
 export const useGetStates = (countryId) =>
@@ -99,6 +101,8 @@ export const useAddState = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ state_name, country_id }) => {
+        console.log("Adding state:", { state_name, country_id }); // 👈 add this
+
       const res = await fetch(`${BASE_URL}/api/auth/admin/state`, {
         method: "POST",
         headers: getAuthHeaders(),
@@ -150,7 +154,7 @@ const fetchCitiesByState = async (stateId) => {
   if (!stateId) return [];
   const res = await fetch(`${BASE_URL}/api/auth/admin/city?state_id=${stateId}`, { headers: getAuthHeaders() });
   const json = await handleResponse(res);
-  return json.cities || [];
+  return Array.isArray(json) ? json : (json.cities || []);
 };
 
 export const useGetCities = (stateId) =>

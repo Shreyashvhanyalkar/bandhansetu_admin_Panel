@@ -42,9 +42,35 @@ export const useAllUsers = (filters = {}) => {
       }
 
       const response = await res.json();
-      const usersData = Array.isArray(response) ? response : response.users || [];
+      let usersData = Array.isArray(response) ? response : response.users || [];
 
-      const paginationData = response.pagination || null;
+      let totalPages = 1;
+      let total = usersData.length;
+
+      // Case 1: API returned the entire unpaginated list
+      if (usersData.length > limit) {
+        total = usersData.length;
+        totalPages = Math.ceil(total / limit);
+        usersData = usersData.slice((page - 1) * limit, page * limit);
+      } 
+      // Case 2: API returns an object with pagination metadata
+      else if (!Array.isArray(response) && (response.pagination || response.total !== undefined || response.total_pages !== undefined)) {
+        const p = response.pagination || response;
+        total = p.total ?? p.total_items ?? usersData.length;
+        totalPages = p.total_pages ?? p.totalPages ?? Math.ceil(total / limit);
+      }
+      // Case 3: API returned a paginated slice but NO metadata (plain array)
+      else {
+        if (usersData.length === limit) {
+          totalPages = page + 1; // Assume there is a next page
+          total = page * limit + 1; // Fake total
+        } else {
+          totalPages = page;
+          total = (page - 1) * limit + usersData.length;
+        }
+      }
+
+      const paginationData = { page, limit, total, total_pages: totalPages };
 
       const users = usersData.map((u) => ({
         id: u.id,

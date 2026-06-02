@@ -18,7 +18,7 @@ export default function AdminProfile() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8 px-4 font-[Inter,sans-serif]">
+    <div className="min-h-screen bg-slate-50 py-8 px-4 font-sans">
       <div className="max-w-4xl mx-auto">
         {/* Back Button */}
         <Link 

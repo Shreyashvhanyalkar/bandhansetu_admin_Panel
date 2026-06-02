@@ -142,7 +142,7 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 font-[Inter,sans-serif] min-h-screen bg-slate-50">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 font-sans min-h-screen bg-slate-50">
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4" style={{ animation: "dashFadeUp 0.4s ease-out both" }}>

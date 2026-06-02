@@ -333,7 +333,7 @@
 //         .st-row:hover .st-row-badge { opacity: 0; }
 //       `}</style>
 
-//       <div style={{ minHeight: "100vh", background: C.bg, padding: "28px 24px", fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
+//       <div style={{ minHeight: "100vh", background: C.bg, padding: "28px 24px" }}>
 
 //         {/* Header */}
 //         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 16, marginBottom: 24 }}>

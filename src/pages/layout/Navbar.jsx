@@ -38,7 +38,7 @@ export default function Navbar({ onMenuClick }) {
   };
 
   return (
-    <header className="bg-white border-b border-gray-100 px-4 sm:px-6 py-3 flex items-center justify-between gap-4 sticky top-0 z-30 shadow-sm font-[Inter,sans-serif]">
+    <header className="bg-white border-b border-gray-100 px-4 sm:px-6 py-3 flex items-center justify-between gap-4 sticky top-0 z-30 shadow-sm font-sans">
       {/* Left Side - Logo + Title */}
       <div className="flex items-center gap-4">
         {/* Mobile Menu Button */}

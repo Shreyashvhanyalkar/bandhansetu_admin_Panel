@@ -237,7 +237,7 @@ function SidebarContent({ onClose, isMobile }) {
   const logoutMutation = useLogout();
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-t-4xl font-[Inter,sans-serif]">
+    <div className="flex flex-col h-full bg-white rounded-t-4xl font-sans">
       {/* Logo */}
       <div className="px-5 py-6 border-b border-gray-100 flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-md" style={{ background: `linear-gradient(135deg, ${theme.primaryDark}, ${theme.primary})` }}>

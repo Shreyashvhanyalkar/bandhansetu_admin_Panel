@@ -32,7 +32,6 @@ const C = {
 };
 
 const AVATAR_PALETTE = ["#bd201c", "#9B0424", "#601000", "#dc2626", "#ef4444", "#7f1d1d"];
-const PAGE_SIZES = [10, 25, 50, 100];
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 const MOCK_SENT_REQUESTS = [
@@ -56,11 +55,12 @@ const initials = (name = "") =>
 const Icons = {
   Search: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" strokeLinecap="round" /></svg>,
   Filter: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z" strokeLinecap="round" strokeLinejoin="round" /></svg>,
-  Eye: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
+  Eye: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>,
   Trash: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" strokeLinecap="round" /><path d="M19 6l-1 14H6L5 6" strokeLinecap="round" /><path d="M10 11v6M14 11v6" strokeLinecap="round" /></svg>,
   Restore: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4v5h5M20 20v-5h-5" strokeLinecap="round" strokeLinejoin="round" /><path d="M4 9a8 8 0 0114.93-3.5M20 15a8 8 0 01-14.93 3.5" strokeLinecap="round" strokeLinejoin="round" /></svg>,
   Close: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" /></svg>,
-  Key: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="5" y="11" width="14" height="11" rx="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>
+  Key: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="5" y="11" width="14" height="11" rx="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>,
+  Download: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
 };
 
 // ─── Components ───────────────────────────────────────────────────────────────
@@ -223,7 +223,7 @@ function UserDetailDrawer({ user, isDeletedView, onClose, onToggle, onDelete, on
       <div className="fixed inset-0 z-[60] flex justify-end">
         <div className="absolute inset-0 bg-slate-900/30 backdrop-blur-sm transition-opacity" onClick={onClose} style={{ animation: 'fadeIn 0.2s ease-out forwards' }} />
         <div className="relative w-full max-w-md md:max-w-xl bg-white h-full shadow-2xl flex flex-col" style={{ animation: 'slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}>
-          
+
           {/* Header */}
           <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-start bg-slate-50/50 shrink-0">
             <div className="flex items-center gap-4">
@@ -323,7 +323,7 @@ function Chip({ label, onRemove }) {
 // ─── Main View ────────────────────────────────────────────────────────────────
 export default function ApproveReject() {
   const navigate = useNavigate();
-  const [filters, setFilters] = useState({ page: 1, limit: 10, search: "", status: undefined, deleted: undefined });
+  const [filters, setFilters] = useState({ page: 1, limit: 25, search: "", status: 1, deleted: undefined });
   const [advFilters, setAdvFilters] = useState({ gender: "", ageMin: "", ageMax: "", city: "", state: "" });
   const [searchInput, setSearchInput] = useState("");
   const [showFilters, setShowFilters] = useState(false);
@@ -332,6 +332,7 @@ export default function ApproveReject() {
   const [restoreTarget, setRestoreTarget] = useState(null);
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [toast, setToast] = useState({ show: false, message: "", type: "" });
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setFilters((f) => ({ ...f, search: searchInput.trim(), page: 1 })), 400);
@@ -356,7 +357,7 @@ export default function ApproveReject() {
   const deleteMutation = useDeleteUser();
   const restoreMutation = useRestoreUser();
   const [resetPending, setResetPending] = useState(false);
-  
+
   const isDeletedView = filters.deleted === true;
 
   const notify = (message, type = "success") => {
@@ -365,7 +366,11 @@ export default function ApproveReject() {
   };
 
   const updateFilter = useCallback((k, v) => {
-    setFilters(f => ({ ...f, [k]: v, page: 1 }));
+    setFilters(f => ({ 
+      ...f, 
+      [k]: v, 
+      ...(k !== 'page' ? { page: 1 } : {}) 
+    }));
     setSelected(null);
   }, []);
 
@@ -412,6 +417,59 @@ export default function ApproveReject() {
     notify(`Password reset for ${selected?.name}`, "success");
   };
 
+  const handleExportCSV = async () => {
+    setIsExporting(true);
+    try {
+      const params = new URLSearchParams();
+      if (filters.search?.trim()) params.set("search", filters.search.trim());
+      if (filters.status !== undefined) params.set("status", String(filters.status));
+      if (filters.deleted !== undefined) params.set("deleted", String(filters.deleted));
+
+      const BASE_URL = import.meta.env.VITE_BASE_URL;
+      const url = `${BASE_URL}/api/auth/admin/users/export?${params.toString()}`;
+
+      const res = await fetch(url, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "x-app-type": "admin",
+          "Accept-Language": "en",
+        },
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || "Failed to export CSV");
+      }
+
+      const blob = await res.blob();
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+
+      const contentDisposition = res.headers.get("content-disposition");
+      let filename = `users_export_${new Date().toISOString().replace(/[-:T.]/g, "").slice(0, 14)}.csv`;
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="?([^"]+)"?/);
+        if (match && match[1]) {
+          filename = match[1];
+        }
+      }
+
+      link.setAttribute("download", filename);
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(downloadUrl);
+      notify("CSV exported successfully", "success");
+    } catch (err) {
+      notify(err.message || "Failed to export CSV", "error");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   // Styles injected for animations
   useEffect(() => {
     const s = document.createElement('style');
@@ -446,10 +504,10 @@ export default function ApproveReject() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 font-[Inter,sans-serif] p-4 sm:p-8">
+    <div className="min-h-screen bg-slate-50 font-sans p-4 sm:p-8">
       <Toast {...toast} />
       <div className="max-w-[1400px] mx-auto space-y-6">
-        
+
         {/* Header & Breadcrumb */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
@@ -472,9 +530,9 @@ export default function ApproveReject() {
               <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#bd201c] transition-colors">
                 <Icons.Search />
               </span>
-              <input 
-                type="text" 
-                placeholder="Search by name, email or ID..." 
+              <input
+                type="text"
+                placeholder="Search by name, email or ID..."
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 className="w-full pl-11 pr-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl outline-none transition-all focus:bg-white focus:border-[#fca5a5] focus:ring-4 focus:ring-[#fee2e2]"
@@ -483,13 +541,18 @@ export default function ApproveReject() {
 
             {/* Filters & Actions */}
             <div className="flex items-center gap-2 w-full lg:w-auto overflow-x-auto pb-1 lg:pb-0 flex-wrap">
-              <select value={filters.status || ""} onChange={e => updateFilter('status', e.target.value ? Number(e.target.value) : undefined)}
+              <button onClick={handleExportCSV} disabled={isExporting}
+                className="px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 outline-none hover:bg-gray-100 hover:border-gray-300 transition flex items-center gap-2 shadow-sm cursor-pointer whitespace-nowrap disabled:opacity-50">
+                {isExporting ? <Spinner size={16} color={C.primary} /> : <Icons.Download />}
+                {isExporting ? "Exporting..." : "Export CSV"}
+              </button>
+
+              <select value={filters.status} onChange={e => updateFilter('status', Number(e.target.value))}
                 className="px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 outline-none hover:bg-gray-100 cursor-pointer transition">
-                <option value="">All Status</option>
                 <option value="1">Active</option>
                 <option value="0">Inactive</option>
               </select>
-              
+
               <button onClick={() => updateFilter('deleted', filters.deleted ? undefined : true)}
                 className={`px-3 py-2.5 rounded-xl text-sm font-medium border transition whitespace-nowrap ${filters.deleted ? 'bg-[#bd201c] text-white border-[#bd201c]' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>
                 Deleted Users
@@ -498,11 +561,10 @@ export default function ApproveReject() {
               {/* Advanced Filters Toggle */}
               <button
                 onClick={() => setShowFilters(v => !v)}
-                className={`relative px-3 py-2.5 rounded-xl text-sm font-bold border transition flex items-center gap-2 whitespace-nowrap ${
-                  showFilters || activeFilterCount > 0
-                    ? 'bg-[#fef2f2] text-[#bd201c] border-[#fca5a5]'
-                    : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
-                }`}
+                className={`relative px-3 py-2.5 rounded-xl text-sm font-bold border transition flex items-center gap-2 whitespace-nowrap ${showFilters || activeFilterCount > 0
+                  ? 'bg-[#fef2f2] text-[#bd201c] border-[#fca5a5]'
+                  : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                  }`}
               >
                 <Icons.Filter />
                 Filters
@@ -512,13 +574,6 @@ export default function ApproveReject() {
                   </span>
                 )}
               </button>
-
-              <div className="h-8 w-px bg-gray-200 hidden sm:block mx-1" />
-
-              <select value={filters.limit} onChange={e => updateFilter('limit', Number(e.target.value))}
-                className="px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 outline-none cursor-pointer hover:bg-gray-50 transition">
-                {PAGE_SIZES.map(n => <option key={n} value={n}>{n} rows</option>)}
-              </select>
             </div>
           </div>
 
@@ -607,11 +662,11 @@ export default function ApproveReject() {
 
         {/* Data Table */}
         <div className="bg-white border border-gray-200 shadow-sm rounded-2xl overflow-hidden relative">
-          
+
           {/* Refresh overlay */}
           {isFetching && !isLoading && (
             <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex justify-center items-start pt-10">
-               <span className="bg-white p-2 rounded-full shadow-md text-[#bd201c]"><Spinner size={24} color="#bd201c" /></span>
+              <span className="bg-white p-2 rounded-full shadow-md text-[#bd201c]"><Spinner size={24} color="#bd201c" /></span>
             </div>
           )}
 
@@ -626,7 +681,7 @@ export default function ApproveReject() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 text-sm">
-                
+
                 {isLoading ? (
                   [...Array(5)].map((_, i) => (
                     <tr key={i} className="animate-pulse">
@@ -697,18 +752,51 @@ export default function ApproveReject() {
               </tbody>
             </table>
           </div>
-          
+
           {/* Pagination */}
-          {pagination && pagination.total_pages > 1 && (
-            <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex items-center justify-between text-sm">
+          {pagination && (
+            <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex items-center justify-between text-sm flex-wrap gap-3">
               <span className="text-gray-500 font-medium">
-                Page <span className="font-bold text-gray-900">{filters.page}</span> of {pagination.total_pages}
+                Showing <span className="font-bold text-gray-900">{((filters.page - 1) * filters.limit) + 1}–{Math.min(filters.page * filters.limit, pagination.total)}</span> of <span className="font-bold text-gray-900">{pagination.total}</span> users
               </span>
-              <div className="flex gap-1">
-                <button disabled={filters.page === 1} onClick={() => updateFilter('page', filters.page - 1)}
-                  className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50 font-medium transition">Prev</button>
-                <button disabled={filters.page === pagination.total_pages} onClick={() => updateFilter('page', filters.page + 1)}
-                  className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50 font-medium transition">Next</button>
+              <div className="flex items-center gap-1 flex-wrap">
+                {/* Prev */}
+                <button
+                  disabled={filters.page === 1}
+                  onClick={() => updateFilter('page', filters.page - 1)}
+                  className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-40 font-medium transition text-xs"
+                >← Prev</button>
+
+                {/* Page numbers */}
+                {Array.from({ length: pagination.total_pages }, (_, i) => i + 1)
+                  .filter(p => p === 1 || p === pagination.total_pages || Math.abs(p - filters.page) <= 1)
+                  .reduce((acc, p, idx, arr) => {
+                    if (idx > 0 && p - arr[idx - 1] > 1) acc.push('...');
+                    acc.push(p);
+                    return acc;
+                  }, [])
+                  .map((p, i) =>
+                    p === '...' ? (
+                      <span key={`dots-${i}`} className="px-2 text-gray-400 text-xs">…</span>
+                    ) : (
+                      <button
+                        key={p}
+                        onClick={() => updateFilter('page', p)}
+                        className={`w-8 h-8 rounded-lg text-xs font-semibold border transition ${filters.page === p
+                          ? 'bg-[#bd201c] text-white border-[#bd201c]'
+                          : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                          }`}
+                      >{p}</button>
+                    )
+                  )
+                }
+
+                {/* Next */}
+                <button
+                  disabled={filters.page === pagination.total_pages}
+                  onClick={() => updateFilter('page', filters.page + 1)}
+                  className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-40 font-medium transition text-xs"
+                >Next →</button>
               </div>
             </div>
           )}
@@ -734,10 +822,10 @@ export default function ApproveReject() {
       )}
 
       <ResetPasswordModal isOpen={resetModalOpen} onClose={() => setResetModalOpen(false)} onConfirm={handleResetPassword} isPending={resetPending} userName={selected?.name} />
-      
+
       <ConfirmModal isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={confirmDelete} isPending={deleteMutation.isPending}
         title="Delete User Account" message={`Are you sure you want to soft-delete "${deleteTarget?.name}"? They will lose access to their account.`} confirmLabel="Yes, Delete" accentColor={C.danger} />
-        
+
       <ConfirmModal isOpen={!!restoreTarget} onClose={() => setRestoreTarget(null)} onConfirm={confirmRestore} isPending={restoreMutation.isPending}
         title="Restore User Account" message={`"${restoreTarget?.name}" will be restored and regain full access.`} confirmLabel="Yes, Restore" accentColor={C.active} />
     </div>

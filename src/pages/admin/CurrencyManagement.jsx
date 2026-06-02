@@ -289,7 +289,7 @@
 //   };
 
 //   return (
-//     <div className="min-h-screen font-[Inter,sans-serif] bg-slate-50 p-4 sm:p-8">
+//     <div className="min-h-screen font-sans bg-slate-50 p-4 sm:p-8">
 //       {/* Toast Notification */}
 //       {toastMessage && (
 //         <div className="fixed top-6 right-6 z-[200] animate-in slide-in-from-top-2 fade-in duration-200">

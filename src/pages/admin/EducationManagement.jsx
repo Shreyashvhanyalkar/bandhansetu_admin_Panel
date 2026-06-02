@@ -371,7 +371,7 @@ export default function EducationManagement() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 font-[Inter,sans-serif] p-4 sm:p-8">
+    <div className="min-h-screen bg-slate-50 font-sans p-4 sm:p-8">
       {/* Global CSS for animations */}
       <style>{`
         @keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }

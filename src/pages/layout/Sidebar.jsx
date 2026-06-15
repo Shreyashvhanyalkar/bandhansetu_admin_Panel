@@ -38,8 +38,7 @@ const NAV_ITEMS = [
     children: [
       { label: "User Management", to: "/admin/requests" },
       { label: "Location Management", to: "/admin/locations" },
-      // { label: "Education Management", to: "/admin/education" },
-      // { label: "Currency Management", to: "/admin/currency" },/
+      
       {
         label: "Religion & Community",
         to: "/admin/religion",
@@ -81,10 +80,7 @@ const NAV_ITEMS = [
     ),
     children: [
       { label: "Send Notification", to: "/admin/notifications/send" },
-      { label: "Broadcast All", to: "/admin/notifications/broadcast" },
-      { label: "Target Specific", to: "/admin/notifications/target" },
-      { label: "Scheduled", to: "/admin/notifications/scheduled" },
-      { label: "Read Status", to: "/admin/notifications/status" },
+      
     ],
   },
   {

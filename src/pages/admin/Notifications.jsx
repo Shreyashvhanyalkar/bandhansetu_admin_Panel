@@ -1,591 +1,882 @@
-// pages/admin/Notifications.jsx
-import { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-// ─── Static Data ──────────────────────────────────────────────────────────────
-const STATIC_NOTIFICATIONS = [
-  { id: 1,  title: "Welcome to BandhanSetu!",       message: "Complete your profile to get better matches and start your journey.",          audience: "all",      scheduledAt: null,             sentAt: "2025-04-01 09:00", sent: 4821, delivered: 4700, read: 3200, status: "sent"      },
-  { id: 2,  title: "New Match Found 💍",             message: "You have a new match waiting for your response. Don't miss this opportunity!", audience: "targeted", scheduledAt: null,             sentAt: "2025-04-02 11:30", sent: 312,  delivered: 300,  read: 265,  status: "sent"      },
-  { id: 3,  title: "Profile Verification Reminder", message: "Your profile is pending verification. Please upload the required documents.", audience: "targeted", scheduledAt: null,             sentAt: "2025-04-05 14:00", sent: 47,   delivered: 45,   read: 38,   status: "sent"      },
-  { id: 4,  title: "Festival Offer – Premium",      message: "Get 3 months premium free this festive season! Limited time offer.",        audience: "all",      scheduledAt: "2025-04-15 10:00",sentAt: null,              sent: 0,    delivered: 0,    read: 0,    status: "scheduled" },
-  { id: 5,  title: "Account Security Alert",        message: "Login detected from a new device. Was this you? Verify your account.",       audience: "targeted", scheduledAt: null,             sentAt: "2025-04-08 08:15", sent: 23,   delivered: 23,   read: 20,   status: "sent"      },
-  { id: 6,  title: "Weekly Match Digest",           message: "Here are your top 5 compatible profiles this week based on your preferences.", audience: "all",      scheduledAt: "2025-04-20 09:00",sentAt: null,              sent: 0,    delivered: 0,    read: 0,    status: "scheduled" },
-  { id: 7,  title: "Profile Photo Approved ✅",     message: "Your profile photo has been approved by our team. Your profile is now live!", audience: "targeted", scheduledAt: null,             sentAt: "2025-04-10 16:45", sent: 89,   delivered: 88,   read: 76,   status: "sent"      },
+// components/admin/NotificationManagement.jsx - Using simple filter APIs
+
+import { useState, useEffect, useRef } from "react";
+import {
+  useAllUsers,
+  useReligions,
+  useSendNotification,
+} from "../../hooks/useNotificationQueries";
+
+// ─── Design Tokens ─────────────────────────────────────────────────────────────
+const C = {
+  primary: "#bd201c",
+  primaryDark: "#601000",
+  primaryLight: "#fef2f2",
+  primaryBorder: "#fca5a5",
+  gray50: "#f9fafb",
+  gray100: "#f3f4f6",
+  gray200: "#e5e7eb",
+  gray300: "#d1d5db",
+  gray400: "#9ca3af",
+  gray500: "#6b7280",
+  gray600: "#4b5563",
+  gray700: "#374151",
+  gray800: "#1f2937",
+  gray900: "#111827",
+  white: "#ffffff",
+  green50: "#f0fdf4",
+  greenText: "#15803d",
+  greenBorder: "#86efac",
+};
+
+// Common city names from your data
+const COMMON_CITIES = [
+  "Pune", "Mumbai", "Delhi", "Ahmedabad", "Bangalore", 
+  "Hyderabad", "Chennai", "Jaipur", "Lucknow", "Kochi", 
+  "Aurangabad", "Panaji", "Bengaluru", "Nashik"
 ];
 
-const STATIC_USERS = [
-  { id: 1,  name: "Priya Sharma",  email: "priya.sharma@gmail.com",  avatar: "P", location: "Mumbai" },
-  { id: 2,  name: "Rahul Mehta",   email: "rahul.mehta@gmail.com",   avatar: "R", location: "Delhi" },
-  { id: 3,  name: "Anjali Patel",  email: "anjali.patel@yahoo.com",  avatar: "A", location: "Ahmedabad" },
-  { id: 4,  name: "Vikram Singh",  email: "vikram.singh@hotmail.com",avatar: "V", location: "Jaipur" },
-  { id: 5,  name: "Neha Gupta",    email: "neha.gupta@gmail.com",    avatar: "N", location: "Pune" },
-  { id: 6,  name: "Amit Verma",    email: "amit.verma@gmail.com",    avatar: "A", location: "Bangalore" },
-  { id: 7,  name: "Sneha Reddy",   email: "sneha.reddy@yahoo.com",   avatar: "S", location: "Hyderabad" },
-  { id: 8,  name: "Karan Joshi",   email: "karan.joshi@gmail.com",   avatar: "K", location: "Chennai" },
-];
-
-function Spinner({ className = "w-4 h-4" }) {
-  return (
-    <svg className={`${className} animate-spin`} fill="none" viewBox="0 0 24 24">
-      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-    </svg>
-  );
+function getInitials(firstName, lastName) {
+  return `${(firstName || "U")[0]}${(lastName || "")[0] || ""}`.toUpperCase();
 }
 
-function StatCard({ label, value, icon, trend, trendValue, delay }) {
+// ─── Toast Component ───────────────────────────────────────────────────────────
+function Toast({ toast, onClose }) {
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(onClose, 5000);
+    return () => clearTimeout(timer);
+  }, [toast, onClose]);
+
+  if (!toast) return null;
+
   return (
-    <div 
-      className="group bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer"
-      style={{ animation: `fadeSlideUp 0.4s ease-out ${delay}s forwards`, opacity: 0 }}
-    >
-      <div className="flex items-start justify-between">
-        <div className="space-y-2">
-          <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">{label}</p>
-          <p className="text-2xl font-bold text-gray-800">{value}</p>
-          {trend && (
-            <div className="flex items-center gap-1">
-              <span className={`text-xs font-medium ${trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
-                {trend === 'up' ? '↑' : '↓'} {trendValue}%
-              </span>
-              <span className="text-xs text-gray-400">vs last week</span>
-            </div>
-          )}
-        </div>
-        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-fuchsia-100 to-fuchsia-50 flex items-center justify-center text-xl transition-all duration-300 group-hover:scale-110 group-hover:shadow-md">
-          {icon}
+    <div className="fixed top-20 right-4 z-50 animate-slide-in">
+      <div className={`rounded-lg shadow-lg p-4 min-w-[300px] max-w-md ${
+        toast.type === "success" ? "bg-green-50 border-l-4 border-green-500" : "bg-red-50 border-l-4 border-red-500"
+      }`}>
+        <div className="flex items-start gap-3">
+          <div className="flex-1">
+            <p className={`font-semibold ${toast.type === "success" ? "text-green-800" : "text-red-800"}`}>
+              {toast.title}
+            </p>
+            {toast.message && (
+              <p className="text-sm mt-1 text-gray-600">{toast.message}</p>
+            )}
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
       </div>
     </div>
   );
 }
 
-function TabNav({ activeTab, onTabChange }) {
-  const tabs = [
-    { id: "send", label: "Send Notification", icon: "✏️", path: "/admin/notifications/send" },
-    { id: "broadcast", label: "Broadcast All", icon: "📢", path: "/admin/notifications/broadcast" },
-    { id: "target", label: "Target Users", icon: "🎯", path: "/admin/notifications/target" },
-    { id: "scheduled", label: "Scheduled", icon: "📅", path: "/admin/notifications/scheduled" },
-    { id: "status", label: "Read Status", icon: "📊", path: "/admin/notifications/status" },
-  ];
+// ─── User Preview Component (Read-only for Group mode) ─────────────────────────
+function UserPreview({ users, isLoading, filters }) {
+  if (isLoading) {
+    return (
+      <div className="text-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#bd201c] mx-auto"></div>
+        <p className="text-sm text-gray-500 mt-2">Loading users...</p>
+      </div>
+    );
+  }
+
+  if (!users || users.length === 0) {
+    return (
+      <div className="text-center py-8 bg-gray-50 rounded-lg">
+        <svg className="w-12 h-12 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+        <p className="text-sm text-gray-500">No users found matching the selected filters</p>
+        <p className="text-xs text-gray-400 mt-1">Try adjusting your filters</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex flex-wrap gap-1 border-b border-gray-200 pb-0">
-      {tabs.map((tab) => (
-        <button
-          key={tab.id}
-          onClick={() => onTabChange(tab.id, tab.path)}
-          className={`px-5 py-2.5 text-sm font-medium rounded-t-xl transition-all duration-200 flex items-center gap-2 ${
-            activeTab === tab.id
-              ? "bg-white text-fuchsia-600 border-b-2 border-fuchsia-500 shadow-sm"
-              : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-          }`}
+    <div className="space-y-2 max-h-96 overflow-y-auto">
+      {users.map((user) => (
+        <div
+          key={user.id}
+          className="flex items-center gap-3 p-3 rounded-lg bg-white border border-gray-100 hover:border-gray-200 transition-all"
         >
-          <span className="text-base">{tab.icon}</span>
-          <span className="hidden sm:inline">{tab.label}</span>
-        </button>
+          <div className="w-10 h-10 rounded-full bg-[#bd201c] text-white flex items-center justify-center text-sm font-bold">
+            {getInitials(user.firstName, user.lastName)}
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-gray-800">
+              {user.firstName} {user.lastName}
+            </p>
+            <p className="text-xs text-gray-500">
+              {user.gender || "N/A"} • {user.cityName || "Unknown"} • {user.religionName || "N/A"}
+            </p>
+          </div>
+          <div className="text-xs text-gray-400">
+            {user.platformId || user.id?.slice(-6)}
+          </div>
+        </div>
       ))}
     </div>
   );
 }
 
-// ─── Compose Form Component ───────────────────────────────────────────────────
-function ComposeForm({ mode, onSuccess }) {
-  const [form, setForm] = useState({
-    title: "",
-    message: "",
-    audience: mode === "broadcast" ? "all" : mode === "target" ? "targeted" : "all",
-    selectedUsers: [],
-    schedule: false,
-    scheduledAt: "",
-  });
-  const [sending, setSending] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [charCount, setCharCount] = useState(0);
+// ─── User Select Component (For Personalize mode) ─────────────────────────────
+function UserSelect({ selected, onChange, error }) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const ref = useRef(null);
+
+  const { data: usersData, isLoading, isFetching } = useAllUsers(search, 1, 50);
+  const users = usersData?.users || usersData || [];
 
   useEffect(() => {
-    setCharCount(form.message.length);
-  }, [form.message]);
+    function handleClickOutside(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
-  const handleSend = () => {
-    if (!form.title.trim() || !form.message.trim()) return;
-    if (form.schedule && !form.scheduledAt) return;
-    setSending(true);
-    setTimeout(() => {
-      setSending(false);
-      setSuccess(true);
-      setForm({ title: "", message: "", audience: form.audience, selectedUsers: [], schedule: false, scheduledAt: "" });
-      setTimeout(() => {
-        setSuccess(false);
-        if (onSuccess) onSuccess();
-      }, 3000);
-    }, 1200);
-  };
+  const selectedUsers = users.filter(u => selected.includes(u.id));
 
-  const toggleUser = (id) => {
-    setForm((f) => ({
-      ...f,
-      selectedUsers: f.selectedUsers.includes(id)
-        ? f.selectedUsers.filter((u) => u !== id)
-        : [...f.selectedUsers, id],
-    }));
-  };
-
-  const getAudienceText = () => {
-    if (mode === "broadcast") return "All registered users will receive this notification.";
-    if (mode === "target") return `Selected ${form.selectedUsers.length} user(s) will receive this notification.`;
-    if (form.audience === "all") return "All registered users will receive this notification.";
-    return `${form.selectedUsers.length} selected user(s) will receive this notification.`;
+  const toggleUser = (userId) => {
+    if (selected.includes(userId)) {
+      onChange(selected.filter(id => id !== userId));
+    } else {
+      onChange([...selected, userId]);
+    }
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden animate-scale-in">
-      <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-fuchsia-50/30 to-white">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-fuchsia-100 flex items-center justify-center">
-            {mode === "broadcast" ? "📢" : mode === "target" ? "🎯" : "✏️"}
-          </div>
-          <div>
-            <h2 className="font-semibold text-gray-800">
-              {mode === "broadcast" ? "Broadcast to All Users" :
-               mode === "target"    ? "Target Specific Users"  :
-               "Send Notification"}
-            </h2>
-            <p className="text-xs text-gray-400 mt-0.5">{getAudienceText()}</p>
-          </div>
-        </div>
+    <div ref={ref} className="relative">
+      <div
+        onClick={() => setOpen(!open)}
+        className={`border rounded-lg p-2 cursor-pointer bg-white min-h-[46px] flex flex-wrap gap-2 items-center transition-all ${
+          error ? "border-red-300" : open ? "border-[#bd201c] ring-2 ring-[#fef2f2]" : "border-gray-200"
+        }`}
+      >
+        {selectedUsers.length === 0 && (
+          <span className="text-gray-400 text-sm">Search and select users...</span>
+        )}
+        {selectedUsers.map(user => (
+          <span
+            key={user.id}
+            className="bg-[#fef2f2] text-[#bd201c] border border-[#fca5a5] rounded-md px-2 py-1 text-xs font-semibold flex items-center gap-1"
+          >
+            {user.firstName} {user.lastName}
+            <button
+              onClick={(e) => { e.stopPropagation(); toggleUser(user.id); }}
+              className="ml-1 text-[#bd201c] hover:text-[#601000]"
+            >
+              ×
+            </button>
+          </span>
+        ))}
+        <svg className="ml-auto w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={open ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"} />
+        </svg>
       </div>
 
-      <div className="p-6 space-y-5">
-        {success && (
-          <div className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 text-sm rounded-xl px-4 py-3 animate-slide-down">
-            <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Notification {form.schedule ? "scheduled" : "sent"} successfully!
+      {open && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-96 overflow-hidden">
+          <div className="p-2 border-b border-gray-100">
+            <input
+              type="text"
+              placeholder="Search by name..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:border-[#bd201c]"
+              autoFocus
+            />
           </div>
-        )}
-
-        {/* Title Input */}
-        <div className="space-y-2">
-          <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide flex items-center gap-1">
-            Notification Title <span className="text-red-400">*</span>
-          </label>
-          <input
-            type="text"
-            placeholder="e.g., New match found for you!"
-            value={form.title}
-            onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-700 outline-none focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-100 transition-all"
-          />
-        </div>
-
-        {/* Message Textarea */}
-        <div className="space-y-2">
-          <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide flex items-center gap-1">
-            Message <span className="text-red-400">*</span>
-          </label>
-          <textarea
-            placeholder="Write your notification message here…"
-            value={form.message}
-            onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
-            rows={4}
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-700 outline-none focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-100 transition-all resize-none"
-          />
-          <div className="flex justify-between items-center">
-            <p className="text-xs text-gray-400">{charCount} characters</p>
-            {charCount > 0 && charCount < 20 && <p className="text-xs text-amber-600">Tip: Add more details for better engagement</p>}
-          </div>
-        </div>
-
-        {/* Audience Selector (only for send mode) */}
-        {mode === "send" && (
-          <div className="space-y-2">
-            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Audience</label>
-            <div className="flex gap-3">
-              {[
-                { id: "all", label: "🌍 All Users", desc: "Send to everyone" },
-                { id: "targeted", label: "🎯 Specific Users", desc: "Choose recipients" }
-              ].map(({ id, label, desc }) => (
-                <button
-                  key={id}
-                  onClick={() => setForm((f) => ({ ...f, audience: id, selectedUsers: id === "all" ? [] : f.selectedUsers }))}
-                  className={`flex-1 p-3 rounded-xl text-left transition-all duration-200 ${
-                    form.audience === id
-                      ? "bg-fuchsia-50 border-2 border-fuchsia-400 shadow-sm"
-                      : "bg-gray-50 border border-gray-200 hover:bg-gray-100"
-                  }`}
-                >
-                  <p className="text-sm font-semibold text-gray-700">{label}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{desc}</p>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* User Picker for targeted */}
-        {(mode === "target" || (mode === "send" && form.audience === "targeted")) && (
-          <div className="space-y-2">
-            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide flex items-center justify-between">
-              <span>Select Users</span>
-              <span className="text-fuchsia-600">{form.selectedUsers.length} selected</span>
-            </label>
-            <div className="border border-gray-200 rounded-xl divide-y divide-gray-100 max-h-64 overflow-y-auto">
-              {STATIC_USERS.map((u) => {
-                const isSelected = form.selectedUsers.includes(u.id);
+          <div className="overflow-y-auto max-h-80">
+            {isLoading || isFetching ? (
+              <div className="p-4 text-center text-gray-500">Loading users...</div>
+            ) : users.length === 0 ? (
+              <div className="p-4 text-center text-gray-400">No users found</div>
+            ) : (
+              users.map(user => {
+                const isSelected = selected.includes(user.id);
                 return (
                   <div
-                    key={u.id}
-                    onClick={() => toggleUser(u.id)}
-                    className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-all duration-200 ${
-                      isSelected ? "bg-fuchsia-50/50" : "hover:bg-gray-50"
+                    key={user.id}
+                    onClick={() => toggleUser(user.id)}
+                    className={`flex items-center gap-3 p-3 cursor-pointer transition-colors ${
+                      isSelected ? "bg-[#fef2f2]" : "hover:bg-gray-50"
                     }`}
                   >
-                    <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${
-                      isSelected ? "bg-fuchsia-500 border-fuchsia-500" : "border-gray-300"
+                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                      isSelected ? "bg-[#bd201c] border-[#bd201c]" : "border-gray-300"
                     }`}>
                       {isSelected && (
-                        <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                         </svg>
                       )}
                     </div>
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-fuchsia-400 to-fuchsia-600 flex items-center justify-center text-white text-xs font-bold">
-                      {u.avatar}
+                    <div className="w-8 h-8 rounded-full bg-[#bd201c] text-white flex items-center justify-center text-xs font-bold">
+                      {getInitials(user.firstName, user.lastName)}
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-700">{u.name}</p>
-                      <p className="text-xs text-gray-400">{u.email}</p>
+                      <p className="text-sm font-semibold text-gray-800">
+                        {user.firstName} {user.lastName}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {user.gender || "N/A"} · {user.cityName || "Unknown"} · {user.religionName || "N/A"}
+                      </p>
                     </div>
-                    <div className="text-xs text-gray-400">{u.location}</div>
                   </div>
                 );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Schedule Toggle */}
-        <div className="space-y-3 pt-2">
-          <div className="flex items-center justify-between">
-            <div>
-              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Schedule for Later</label>
-              <p className="text-xs text-gray-400 mt-0.5">Set a future date and time</p>
-            </div>
-            <button
-              onClick={() => setForm((f) => ({ ...f, schedule: !f.schedule, scheduledAt: "" }))}
-              className={`relative w-12 h-6 rounded-full transition-all duration-300 ${form.schedule ? "bg-fuchsia-500" : "bg-gray-300"}`}
-            >
-              <span
-                className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-all duration-300 ${
-                  form.schedule ? "left-6" : "left-0.5"
-                }`}
-              />
-            </button>
-          </div>
-          {form.schedule && (
-            <input
-              type="datetime-local"
-              value={form.scheduledAt}
-              onChange={(e) => setForm((f) => ({ ...f, scheduledAt: e.target.value }))}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-700 outline-none focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-100 transition-all"
-            />
-          )}
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex gap-3 pt-4">
-          <button
-            onClick={() => setForm({ title: "", message: "", audience: form.audience, selectedUsers: [], schedule: false, scheduledAt: "" })}
-            className="px-5 py-2.5 rounded-xl text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all duration-200"
-          >
-            Clear Form
-          </button>
-          <button
-            onClick={handleSend}
-            disabled={sending || !form.title.trim() || !form.message.trim() || (form.schedule && !form.scheduledAt)}
-            className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-fuchsia-600 to-fuchsia-500 hover:from-fuchsia-700 hover:to-fuchsia-600 shadow-md hover:shadow-lg"
-          >
-            {sending ? (
-              <><Spinner /> {form.schedule ? "Scheduling..." : "Sending..."}</>
-            ) : (
-              <>
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                </svg>
-                {form.schedule ? "Schedule Notification" : mode === "broadcast" ? "Broadcast Now" : "Send Notification"}
-              </>
+              })
             )}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Notification History Table ───────────────────────────────────────────────
-function NotificationHistory({ filterStatus }) {
-  const [expandedId, setExpandedId] = useState(null);
-  
-  const filtered = filterStatus
-    ? STATIC_NOTIFICATIONS.filter((n) => n.status === filterStatus)
-    : STATIC_NOTIFICATIONS;
-
-  return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden animate-scale-in">
-      <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50/50 to-white flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-fuchsia-100 flex items-center justify-center text-sm">
-            {filterStatus === "scheduled" ? "📅" : "📬"}
           </div>
-          <div>
-            <h3 className="font-semibold text-gray-800">
-              {filterStatus === "scheduled" ? "Scheduled Notifications" : "Notification History"}
-            </h3>
-            <p className="text-xs text-gray-400">{filtered.length} notifications</p>
-          </div>
-        </div>
-      </div>
-
-      {filtered.length === 0 ? (
-        <div className="py-16 text-center">
-          <div className="w-20 h-20 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4 text-4xl">
-            📭
-          </div>
-          <p className="font-medium text-gray-500">No notifications found</p>
-          <p className="text-sm text-gray-400 mt-1">Create your first notification using the form above</p>
-        </div>
-      ) : (
-        <div className="divide-y divide-gray-100">
-          {filtered.map((n, idx) => {
-            const deliveryRate = n.sent > 0 ? Math.round((n.delivered / n.sent) * 100) : 0;
-            const readRate = n.delivered > 0 ? Math.round((n.read / n.delivered) * 100) : 0;
-            const isExpanded = expandedId === n.id;
-            
-            return (
-              <div 
-                key={n.id} 
-                className="hover:bg-gray-50 transition-all duration-200"
-                style={{ animation: `slideUp 0.3s ease-out ${idx * 0.05}s forwards`, opacity: 0 }}
-              >
-                <div className="px-6 py-4">
-                  <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0"
-                      style={{ background: n.audience === "all" ? "#fdf4ff" : "#eff6ff" }}>
-                      {n.audience === "all" ? "📢" : "🎯"}
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-2 mb-1">
-                        <span className="font-semibold text-sm text-gray-800">{n.title}</span>
-                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                          n.status === "sent" ? "bg-green-50 text-green-700" : "bg-blue-50 text-blue-700"
-                        }`}>
-                          {n.status === "sent" ? "Sent" : "Scheduled"}
-                        </span>
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${
-                          n.audience === "all" ? "bg-fuchsia-50 text-fuchsia-700" : "bg-blue-50 text-blue-700"
-                        }`}>
-                          {n.audience === "all" ? "All users" : "Targeted"}
-                        </span>
-                      </div>
-                      
-                      <p className={`text-sm text-gray-500 ${!isExpanded ? 'line-clamp-1' : ''}`}>
-                        {n.message}
-                      </p>
-                      
-                      {n.status === "sent" && n.sent > 0 && (
-                        <div className="mt-3 flex flex-wrap items-center gap-4">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-400">📤 Sent:</span>
-                            <span className="text-xs font-semibold text-gray-700">{n.sent.toLocaleString()}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-400">📬 Delivered:</span>
-                            <span className="text-xs font-semibold text-blue-600">{n.delivered.toLocaleString()} ({deliveryRate}%)</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-400">👁️ Read:</span>
-                            <span className="text-xs font-semibold text-green-600">{n.read.toLocaleString()} ({readRate}%)</span>
-                          </div>
-                        </div>
-                      )}
-
-                      {n.status === "scheduled" && (
-                        <div className="mt-2 flex items-center gap-2">
-                          <span className="text-xs text-blue-600 font-medium">📅 Scheduled for {n.scheduledAt}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="text-right shrink-0">
-                      <div className="text-xs text-gray-400">{n.sentAt || n.scheduledAt}</div>
-                      <button
-                        onClick={() => setExpandedId(isExpanded ? null : n.id)}
-                        className="mt-2 text-xs text-fuchsia-600 hover:text-fuchsia-700 transition"
-                      >
-                        {isExpanded ? "Show less" : "Read more"}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+          {selected.length > 0 && (
+            <div className="p-2 border-t border-gray-100 bg-gray-50 flex justify-between items-center">
+              <span className="text-xs text-gray-600">{selected.length} user(s) selected</span>
+              <button onClick={() => onChange([])} className="text-xs text-[#bd201c] hover:text-[#601000] font-semibold">
+                Clear all
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
   );
 }
 
-// ─── Read Status Page ─────────────────────────────────────────────────────────
-function ReadStatus() {
-  const totalSent = STATIC_NOTIFICATIONS.filter((n) => n.status === "sent").reduce((s, n) => s + n.sent, 0);
-  const totalDelivered = STATIC_NOTIFICATIONS.filter((n) => n.status === "sent").reduce((s, n) => s + n.delivered, 0);
-  const totalRead = STATIC_NOTIFICATIONS.filter((n) => n.status === "sent").reduce((s, n) => s + n.read, 0);
-  const deliveryRate = totalSent > 0 ? Math.round((totalDelivered / totalSent) * 100) : 0;
-  const readRate = totalDelivered > 0 ? Math.round((totalRead / totalDelivered) * 100) : 0;
-
+// ─── Form Components ───────────────────────────────────────────────────────────
+function InputField({ label, required, error, hint, suggestions, onSuggestionClick, ...props }) {
+  const [focused, setFocused] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-        <StatCard label="Total Sent" value={totalSent.toLocaleString()} icon="📤" trend="up" trendValue="12" delay={0} />
-        <StatCard label="Total Delivered" value={totalDelivered.toLocaleString()} icon="📬" trend="up" trendValue="8" delay={0.05} />
-        <StatCard label="Total Read" value={totalRead.toLocaleString()} icon="👁️" trend="up" trendValue="15" delay={0.1} />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition-all duration-300">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Delivery Rate</p>
-              <p className="text-3xl font-bold text-blue-600 mt-1">{deliveryRate}%</p>
+    <div className="relative mb-4">
+      {label && (
+        <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">
+          {label}{required && <span className="text-[#bd201c] ml-1">*</span>}
+        </label>
+      )}
+      <input
+        {...props}
+        className={`w-full px-3 py-2 border rounded-lg outline-none transition-all ${
+          error ? "border-red-300" : focused ? "border-[#bd201c] ring-2 ring-[#fef2f2]" : "border-gray-200"
+        }`}
+        onFocus={() => {
+          setFocused(true);
+          if (suggestions && suggestions.length > 0) setShowSuggestions(true);
+        }}
+        onBlur={() => {
+          setFocused(false);
+          setTimeout(() => setShowSuggestions(false), 200);
+        }}
+      />
+      {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
+      {hint && !error && <p className="text-xs text-gray-400 mt-1">{hint}</p>}
+      
+      {showSuggestions && suggestions && suggestions.length > 0 && (
+        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+          {suggestions.map((suggestion, index) => (
+            <div
+              key={index}
+              onClick={() => {
+                onSuggestionClick(suggestion);
+                setShowSuggestions(false);
+              }}
+              className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm capitalize"
+            >
+              {suggestion}
             </div>
-            <div className="w-12 h-12 rounded-2xl bg-blue-100 flex items-center justify-center text-xl">📬</div>
-          </div>
-          <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-1000" style={{ width: `${deliveryRate}%` }} />
-          </div>
-          <p className="text-xs text-gray-400 mt-3">{totalDelivered.toLocaleString()} of {totalSent.toLocaleString()} delivered successfully</p>
+          ))}
         </div>
-
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition-all duration-300">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Read Rate</p>
-              <p className="text-3xl font-bold text-green-600 mt-1">{readRate}%</p>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-green-100 flex items-center justify-center text-xl">👁️</div>
-          </div>
-          <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-green-500 to-green-600 rounded-full transition-all duration-1000" style={{ width: `${readRate}%` }} />
-          </div>
-          <p className="text-xs text-gray-400 mt-3">{totalRead.toLocaleString()} of {totalDelivered.toLocaleString()} users opened the notification</p>
-        </div>
-      </div>
-
-      <NotificationHistory filterStatus={null} />
+      )}
     </div>
   );
 }
 
-// ─── Main Notifications Component ─────────────────────────────────────────────
-export default function Notifications() {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState(() => {
-    if (location.pathname.includes("/broadcast")) return "broadcast";
-    if (location.pathname.includes("/target")) return "target";
-    if (location.pathname.includes("/scheduled")) return "scheduled";
-    if (location.pathname.includes("/status")) return "status";
-    return "send";
-  });
+function TextareaField({ label, hint, rows = 3, ...props }) {
+  const [focused, setFocused] = useState(false);
+  
+  return (
+    <div className="mb-4">
+      {label && (
+        <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">
+          {label}
+        </label>
+      )}
+      <textarea
+        {...props}
+        rows={rows}
+        className={`w-full px-3 py-2 border rounded-lg outline-none transition-all resize-y ${
+          focused ? "border-[#bd201c] ring-2 ring-[#fef2f2]" : "border-gray-200"
+        }`}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+      />
+      {hint && <p className="text-xs text-gray-400 mt-1">{hint}</p>}
+    </div>
+  );
+}
 
+function SelectField({ label, options, value, onChange, placeholder = "Select option" }) {
+  const [focused, setFocused] = useState(false);
+  
+  return (
+    <div className="mb-4">
+      {label && (
+        <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">
+          {label}
+        </label>
+      )}
+      <select
+        value={value}
+        onChange={onChange}
+        className={`w-full px-3 py-2 border rounded-lg outline-none transition-all cursor-pointer ${
+          focused ? "border-[#bd201c] ring-2 ring-[#fef2f2]" : "border-gray-200"
+        }`}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+      >
+        <option value="">{placeholder}</option>
+        {options.map(opt => (
+          <option key={opt.id} value={opt.id}>
+            {opt.religion_name || opt.name}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+function TypeCard({ label, description, icon, selected, onClick }) {
+  const [hovered, setHovered] = useState(false);
+  
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className={`flex-1 text-left p-4 rounded-xl border-2 transition-all ${
+        selected 
+          ? "border-[#bd201c] bg-[#fef2f2]" 
+          : hovered ? "border-gray-300 bg-white" : "border-gray-200 bg-white"
+      }`}
+    >
+      <div className="flex items-start gap-3">
+        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+          selected ? "bg-[#bd201c]" : "bg-gray-100"
+        }`}>
+          <svg className={`w-5 h-5 ${selected ? "text-white" : "text-gray-600"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {icon}
+          </svg>
+        </div>
+        <div className="flex-1">
+          <p className={`text-sm font-bold ${selected ? "text-[#601000]" : "text-gray-800"}`}>{label}</p>
+          <p className={`text-xs mt-1 ${selected ? "text-[#bd201c]" : "text-gray-400"}`}>{description}</p>
+        </div>
+        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+          selected ? "border-[#bd201c] bg-[#bd201c]" : "border-gray-300"
+        }`}>
+          {selected && <div className="w-2 h-2 rounded-full bg-white" />}
+        </div>
+      </div>
+    </button>
+  );
+}
+
+// ─── Main Component ────────────────────────────────────────────────────────────
+export default function NotificationManagement() {
+  const [notificationType, setNotificationType] = useState("");
+  const [title, setTitle] = useState("");
+  const [shortDescription, setShortDescription] = useState("");
+  const [longDescription, setLongDescription] = useState("");
+  const [targetUserIds, setTargetUserIds] = useState([]);
+  const [gender, setGender] = useState("");
+  const [religionName, setReligionName] = useState("");
+  const [cityName, setCityName] = useState("");
+  const [citySuggestions, setCitySuggestions] = useState([]);
+  const [previewUsers, setPreviewUsers] = useState([]);
+  const [isLoadingPreview, setIsLoadingPreview] = useState(false);
+  
+  const [errors, setErrors] = useState({});
+  const [toast, setToast] = useState(null);
+
+  const { data: religionsData, isLoading: religionsLoading } = useReligions();
+  const sendNotificationMutation = useSendNotification();
+
+  const religions = Array.isArray(religionsData) ? religionsData : religionsData?.data || [];
+
+  const genderOptions = [
+    { id: "Male", name: "Male" },
+    { id: "Female", name: "Female" },
+  ];
+
+  // Fetch users based on filters using the simple APIs
+  const fetchPreviewUsers = async () => {
+    if (notificationType !== "Admin Group") return;
+    
+    const hasFilters = gender || religionName || cityName;
+    if (!hasFilters) {
+      setPreviewUsers([]);
+      return;
+    }
+    
+    setIsLoadingPreview(true);
+    
+    try {
+      let url = `${import.meta.env.VITE_BASE_URL}/api/auth/admin/users?`;
+      const params = [];
+      
+      if (gender) params.push(`gender=${gender}`);
+      if (religionName) params.push(`religion=${religionName}`);
+      if (cityName) params.push(`city=${cityName}`);
+      
+      url += params.join('&');
+      
+      console.log("Fetching users from:", url);
+      
+      const response = await fetch(url, {
+        headers: {
+          "Content-Type": "application/json",
+          "x-app-type": "admin",
+          "Accept-Language": "en",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const users = data.users || data || [];
+        setPreviewUsers(users);
+        console.log(`Found ${users.length} users`);
+      } else {
+        setPreviewUsers([]);
+      }
+    } catch (error) {
+      console.error("Error fetching preview users:", error);
+      setPreviewUsers([]);
+    } finally {
+      setIsLoadingPreview(false);
+    }
+  };
+
+  // Debounced filter change
   useEffect(() => {
-    if (location.pathname.includes("/broadcast")) setActiveTab("broadcast");
-    else if (location.pathname.includes("/target")) setActiveTab("target");
-    else if (location.pathname.includes("/scheduled")) setActiveTab("scheduled");
-    else if (location.pathname.includes("/status")) setActiveTab("status");
-    else setActiveTab("send");
-  }, [location.pathname]);
+    if (notificationType === "Admin Group") {
+      const timer = setTimeout(() => {
+        fetchPreviewUsers();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [gender, religionName, cityName, notificationType]);
 
-  const handleTabChange = (tabId, path) => {
-    setActiveTab(tabId);
-    navigate(path);
+  const handleCityChange = (e) => {
+    const value = e.target.value;
+    setCityName(value);
+    
+    if (value.length > 0) {
+      const filtered = COMMON_CITIES.filter(city => 
+        city.toLowerCase().startsWith(value.toLowerCase())
+      );
+      setCitySuggestions(filtered);
+    } else {
+      setCitySuggestions([]);
+    }
   };
 
-  const totalStats = {
-    sent: STATIC_NOTIFICATIONS.filter((n) => n.status === "sent").length,
-    scheduled: STATIC_NOTIFICATIONS.filter((n) => n.status === "scheduled").length,
-    totalSent: STATIC_NOTIFICATIONS.filter((n) => n.status === "sent").reduce((s, n) => s + n.sent, 0),
+  const selectCity = (city) => {
+    setCityName(city);
+    setCitySuggestions([]);
   };
+
+  const validate = () => {
+    const newErrors = {};
+    
+    if (!notificationType) newErrors.notificationType = "Please select a notification type";
+    if (!title.trim()) newErrors.title = "Title is required";
+    if (!shortDescription.trim()) newErrors.shortDescription = "Short description is required";
+    
+    if (notificationType === "Admin Personalize" && targetUserIds.length === 0) {
+      newErrors.targetUsers = "Please select at least one user";
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSend = async () => {
+    if (!validate()) return;
+    
+    const payload = {
+      title: title,
+      shortDescription: shortDescription,
+      notificationType: notificationType,
+    };
+    
+    if (longDescription && longDescription.trim()) {
+      payload.longDescription = longDescription;
+    }
+    
+    if (notificationType === "Admin Personalize") {
+      payload.targetUserIds = targetUserIds;
+    } else if (notificationType === "Admin Group") {
+      if (gender) payload.gender = gender;
+      if (religionName) payload.religion = religionName;
+      if (cityName && cityName.trim()) {
+        payload.city = cityName.trim();
+      }
+    }
+    
+    console.log("Sending payload:", JSON.stringify(payload, null, 2));
+    
+    sendNotificationMutation.mutate(payload, {
+      onSuccess: (data) => {
+        let message = `✅ ${data.successfulPushes || data.totalAttempted || 0} users notified`;
+        if (data.failedPushes > 0) {
+          message += ` • ${data.failedPushes} failed`;
+        }
+        
+        setToast({
+          type: "success",
+          title: "Notification Sent Successfully!",
+          message: message,
+        });
+        
+        setTitle("");
+        setShortDescription("");
+        setLongDescription("");
+        setTargetUserIds([]);
+        setGender("");
+        setReligionName("");
+        setCityName("");
+        setPreviewUsers([]);
+        setErrors({});
+      },
+      onError: (error) => {
+        console.error("Send error:", error);
+        
+        let errorTitle = "Failed to Send Notification";
+        let errorMessage = error.message;
+        
+        if (error.message === "No target users found.") {
+          errorTitle = "No Users Found";
+          errorMessage = "No users match the selected filters.\n\nSuggestions:\n• Make sure city name has correct capitalization (e.g., 'Pune' not 'pune')\n• Try removing some filters\n• Select different gender, religion, or city";
+        }
+        
+        setToast({
+          type: "error",
+          title: errorTitle,
+          message: errorMessage,
+        });
+      },
+    });
+  };
+
+  const handleReset = () => {
+    setTitle("");
+    setShortDescription("");
+    setLongDescription("");
+    setTargetUserIds([]);
+    setGender("");
+    setReligionName("");
+    setCityName("");
+    setPreviewUsers([]);
+    setErrors({});
+  };
+
+  if (religionsLoading) {
+    return (
+      <div className="p-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white rounded-xl border border-gray-200 p-8">
+            <div className="flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#bd201c]"></div>
+              <span className="ml-3 text-gray-600">Loading...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className=" -mx-6 -mt-6 px-6 pt-8 pb-6 rounded-b-3xl">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-fuchsia-500 to-fuchsia-600 flex items-center justify-center shadow-lg">
-            <span className="text-xl">🔔</span>
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-800">Notifications</h1>
-            <p className="text-gray-500 text-sm mt-0.5">Send, broadcast, schedule and track notification performance</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Stat Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
-        <StatCard label="Sent" value={totalStats.sent} icon="📤" trend="up" trendValue="8" delay={0} />
-        <StatCard label="Scheduled" value={totalStats.scheduled} icon="📅" trend="down" trendValue="3" delay={0.05} />
-        <StatCard label="Total Pushes" value={totalStats.totalSent.toLocaleString()} icon="📢" trend="up" trendValue="12" delay={0.1} />
-        <StatCard label="Active Users" value="4,821" icon="👥" trend="up" trendValue="5" delay={0.15} />
-      </div>
-
-      {/* Main Content Card */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="px-6 pt-4">
-          <TabNav activeTab={activeTab} onTabChange={handleTabChange} />
-        </div>
-
-        <div className="p-6">
-          {(activeTab === "send" || activeTab === "broadcast" || activeTab === "target") && (
-            <ComposeForm mode={activeTab} />
-          )}
-          {activeTab === "scheduled" && <NotificationHistory filterStatus="scheduled" />}
-          {activeTab === "status" && <ReadStatus />}
-        </div>
-      </div>
-
-      {/* Animation Styles */}
-      <style jsx>{`
-        @keyframes fadeSlideUp {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
+    <div className="p-6">
+      <style>{`
+        @keyframes slideIn {
+          from { opacity: 0; transform: translateX(100%); }
+          to { opacity: 1; transform: translateX(0); }
         }
-        @keyframes scaleIn {
-          from { opacity: 0; transform: scale(0.95); }
-          to { opacity: 1; transform: scale(1); }
-        }
-        @keyframes slideUp {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes slideDown {
-          from { opacity: 0; transform: translateY(-10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-up { animation: fadeSlideUp 0.4s ease-out forwards; }
-        .animate-scale-in { animation: scaleIn 0.3s ease-out forwards; }
-        .animate-slide-down { animation: slideDown 0.3s ease-out forwards; }
-        .line-clamp-1 {
-          display: -webkit-box;
-          -webkit-line-clamp: 1;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-        }
+        .animate-slide-in { animation: slideIn 0.3s ease-out; }
       `}</style>
+
+      <Toast toast={toast} onClose={() => setToast(null)} />
+
+      <div className="max-w-6xl mx-auto">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">Send Notification</h1>
+          <p className="text-sm text-gray-500 mt-1">Compose and deliver push notifications to users</p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left Column - Form */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5 text-[#bd201c]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                <h2 className="text-sm font-semibold text-gray-700">Notification Details</h2>
+              </div>
+            </div>
+
+            <div className="p-6">
+              {/* Notification Type */}
+              <div className="mb-6">
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-3">
+                  Notification Type <span className="text-[#bd201c] ml-1">*</span>
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <TypeCard
+                    label="Admin Personalize"
+                    description="Send to specific users by ID"
+                    selected={notificationType === "Admin Personalize"}
+                    onClick={() => {
+                      setNotificationType("Admin Personalize");
+                      setPreviewUsers([]);
+                    }}
+                    icon={
+                      <>
+                        <circle cx="11" cy="11" r="8" />
+                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                      </>
+                    }
+                  />
+                  <TypeCard
+                    label="Admin Group"
+                    description="Broadcast to all users matching filters"
+                    selected={notificationType === "Admin Group"}
+                    onClick={() => {
+                      setNotificationType("Admin Group");
+                      setTargetUserIds([]);
+                    }}
+                    icon={
+                      <>
+                        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <path d="M23 21v-2a4 4 0 00-3-3.87" />
+                        <path d="M16 3.13a4 4 0 010 7.75" />
+                      </>
+                    }
+                  />
+                </div>
+                {errors.notificationType && <p className="text-xs text-red-600 mt-2">{errors.notificationType}</p>}
+              </div>
+
+              {/* Content Section */}
+              <div className="border-t border-gray-100 pt-4 mt-2">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-6 h-6 rounded-full bg-[#bd201c] text-white flex items-center justify-center text-xs font-bold">1</div>
+                  <span className="text-xs font-bold text-gray-700 uppercase tracking-wide">Content</span>
+                  <div className="flex-1 h-px bg-gray-100" />
+                </div>
+
+                <InputField
+                  label="Title"
+                  required
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  error={errors.title}
+                  placeholder="e.g., Profile Incomplete"
+                  maxLength={100}
+                />
+                <div className="text-right text-xs text-gray-400 -mt-3 mb-4">{title.length}/100</div>
+
+                <InputField
+                  label="Short Description"
+                  required
+                  value={shortDescription}
+                  onChange={(e) => setShortDescription(e.target.value)}
+                  error={errors.shortDescription}
+                  hint="Appears in the notification tray"
+                  placeholder="Brief summary of your notification"
+                  maxLength={160}
+                />
+                <div className="text-right text-xs text-gray-400 -mt-3 mb-4">{shortDescription.length}/160</div>
+
+                <TextareaField
+                  label="Long Description"
+                  value={longDescription}
+                  onChange={(e) => setLongDescription(e.target.value)}
+                  hint="Full message when expanded (optional)"
+                  placeholder="Detailed message content..."
+                  rows={4}
+                />
+              </div>
+
+              {/* Audience Section */}
+              {notificationType && (
+                <div className="border-t border-gray-100 pt-4 mt-2">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-6 h-6 rounded-full bg-[#bd201c] text-white flex items-center justify-center text-xs font-bold">2</div>
+                    <span className="text-xs font-bold text-gray-700 uppercase tracking-wide">
+                      {notificationType === "Admin Personalize" ? "Select Recipients" : "Audience Filters"}
+                    </span>
+                    <div className="flex-1 h-px bg-gray-100" />
+                  </div>
+
+                  {notificationType === "Admin Personalize" && (
+                    <div className="mb-4">
+                      <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">
+                        Select Users <span className="text-[#bd201c] ml-1">*</span>
+                      </label>
+                      <UserSelect
+                        selected={targetUserIds}
+                        onChange={setTargetUserIds}
+                        error={errors.targetUsers}
+                      />
+                      {errors.targetUsers && <p className="text-xs text-red-600 mt-1">{errors.targetUsers}</p>}
+                      <p className="text-xs text-gray-400 mt-2">Search by name to find and select users</p>
+                    </div>
+                  )}
+
+                  {notificationType === "Admin Group" && (
+                    <>
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                        <p className="text-xs text-blue-800">
+                          ⚠️ All filters are optional. Leave all empty to send to ALL users.
+                        </p>
+                      </div>
+
+                      <div className="space-y-4">
+                        <SelectField
+                          label="Gender"
+                          options={genderOptions}
+                          value={gender}
+                          onChange={(e) => setGender(e.target.value)}
+                          placeholder="All Genders"
+                        />
+
+                        <SelectField
+                          label="Religion"
+                          options={religions.map(r => ({ id: r.religion_name, name: r.religion_name }))}
+                          value={religionName}
+                          onChange={(e) => setReligionName(e.target.value)}
+                          placeholder="All Religions"
+                        />
+
+                        <InputField
+                          label="City"
+                          value={cityName}
+                          onChange={handleCityChange}
+                          onSuggestionClick={selectCity}
+                          suggestions={citySuggestions}
+                          placeholder="Enter city name (e.g., Pune, Mumbai)"
+                          hint="Use exact capitalization - 'Pune' not 'pune'"
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                    <p className="text-sm text-gray-600">
+                      <span className="font-semibold">📨 Will be sent to:</span>{' '}
+                      {notificationType === "Admin Personalize" 
+                        ? `${targetUserIds.length} specific user(s)` 
+                        : !gender && !religionName && !cityName 
+                          ? "ALL users (Global Broadcast)"
+                          : `${previewUsers.length} user(s) matching filters`}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 mt-6 pt-4 border-t border-gray-100">
+                <button
+                  onClick={handleReset}
+                  className="px-5 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 font-medium text-sm hover:bg-gray-50 transition"
+                >
+                  Reset Form
+                </button>
+                <button
+                  onClick={handleSend}
+                  disabled={sendNotificationMutation.isPending}
+                  className="flex-1 px-5 py-2 rounded-lg bg-[#bd201c] hover:bg-[#601000] text-white font-semibold text-sm flex items-center justify-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {sendNotificationMutation.isPending ? (
+                    <>
+                      <svg className="animate-spin w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" opacity="0.2" />
+                        <path d="M12 2a10 10 0 0110 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+                      </svg>
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <line x1="22" y1="2" x2="11" y2="13" />
+                        <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                      </svg>
+                      Send Notification
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column - User Preview (Group Mode Only) */}
+          {notificationType === "Admin Group" && (gender || religionName || cityName) && (
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                <div className="flex items-center gap-2">
+                  <svg className="w-5 h-5 text-[#bd201c]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+                  </svg>
+                  <h2 className="text-sm font-semibold text-gray-700">User Preview</h2>
+                  <span className="ml-auto text-xs font-semibold text-[#bd201c] bg-[#fef2f2] px-2 py-1 rounded-full">
+                    {previewUsers.length} users found
+                  </span>
+                </div>
+              </div>
+              <div className="p-4">
+                <div className="mb-3 flex flex-wrap gap-2">
+                  {gender && (
+                    <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-full">
+                      Gender: {gender}
+                    </span>
+                  )}
+                  {religionName && (
+                    <span className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded-full">
+                      Religion: {religionName}
+                    </span>
+                  )}
+                  {cityName && (
+                    <span className="text-xs bg-purple-50 text-purple-700 px-2 py-1 rounded-full">
+                      City: {cityName}
+                    </span>
+                  )}
+                </div>
+                
+                <p className="text-xs text-gray-500 mb-3">
+                  These users will receive the notification
+                </p>
+                
+                <UserPreview 
+                  users={previewUsers}
+                  isLoading={isLoadingPreview}
+                  filters={{ gender, religionName, cityName }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

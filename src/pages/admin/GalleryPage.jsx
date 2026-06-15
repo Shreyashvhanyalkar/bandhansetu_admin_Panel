@@ -14,7 +14,7 @@ const getAuthHeaders = () => ({
 
 const fetchUserGallery = async (userId) => {
     const res = await fetch(`${BASE_URL}/api/auth/user/gallery/${userId}`, {
-        headers: getAuthHeaders(),
+        headers: getAuthHeaders(), 
     });
     if (!res.ok) return [];
     const data = await res.json();

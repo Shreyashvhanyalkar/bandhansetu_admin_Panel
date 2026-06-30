@@ -1,7 +1,7 @@
 // src/pages/admin/profileDetails.jsx
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const BASE_URL = import.meta.env.VITE_BASE_URL;
 const IMAGE_DOWNLOAD_URL = `${BASE_URL}/api/file/download/thumbnail_`;
@@ -95,12 +95,103 @@ function Skeleton() {
     );
 }
 
-function Lightbox({ src, onClose }) {
-    if (!src) return null;
+function SecureImage({ fileName, alt, style, className }) {
+    const [imgSrc, setImgSrc] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(false);
+
+    useEffect(() => {
+        if (!fileName) {
+            setImgSrc(null);
+            return;
+        }
+
+        let isMounted = true;
+        const controller = new AbortController();
+
+        const fetchImage = async () => {
+            setLoading(true);
+            setError(false);
+            try {
+                const url = `${BASE_URL}/api/file/download/thumbnail_${fileName}`;
+                const res = await fetch(url, {
+                    signal: controller.signal,
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                        "x-app-type": "admin",
+                    },
+                });
+
+                if (!res.ok) {
+                    throw new Error("Failed to download image");
+                }
+
+                const blob = await res.blob();
+                if (isMounted) {
+                    const objectUrl = URL.createObjectURL(blob);
+                    setImgSrc(prevUrl => {
+                        if (prevUrl) URL.revokeObjectURL(prevUrl);
+                        return objectUrl;
+                    });
+                }
+            } catch (err) {
+                if (err.name !== "AbortError" && isMounted) {
+                    setError(true);
+                }
+            } finally {
+                if (isMounted) {
+                    setLoading(false);
+                }
+            }
+        };
+
+        fetchImage();
+
+        return () => {
+            isMounted = false;
+            controller.abort();
+        };
+    }, [fileName]);
+
+    useEffect(() => {
+        return () => {
+            if (imgSrc) {
+                URL.revokeObjectURL(imgSrc);
+            }
+        };
+    }, [imgSrc]);
+
+    if (loading) {
+        return (
+            <div style={{ ...style, display: "flex", alignItems: "center", justifyContent: "center", background: "#f0e8e8" }} className={className}>
+                <span style={{ fontSize: 12, color: "#9B0424" }}>Loading...</span>
+            </div>
+        );
+    }
+
+    if (error || !imgSrc) {
+        return (
+            <div style={{ ...style, display: "flex", alignItems: "center", justifyContent: "center", background: "#f0e8e8" }} className={className}>
+                <span style={{ fontSize: 24 }}>🖼️</span>
+            </div>
+        );
+    }
+
+    return <img src={imgSrc} alt={alt} style={style} className={className} />;
+}
+
+function Lightbox({ fileName, onClose }) {
+    if (!fileName) return null;
     return (
         <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.92)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <button onClick={onClose} style={{ position: "absolute", top: 20, right: 20, background: "rgba(255,255,255,0.15)", border: "none", color: "#fff", width: 40, height: 40, borderRadius: "50%", fontSize: 20, cursor: "pointer" }}>✕</button>
-            <img src={src} alt="Full view" onClick={e => e.stopPropagation()} style={{ maxWidth: "92vw", maxHeight: "88vh", borderRadius: 16, objectFit: "contain", boxShadow: "0 8px 40px rgba(0,0,0,0.6)" }} />
+            <button onClick={onClose} style={{ position: "absolute", top: 20, right: 20, background: "rgba(255,255,255,0.15)", border: "none", color: "#fff", width: 40, height: 40, borderRadius: "50%", fontSize: 20, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+            <div onClick={e => e.stopPropagation()}>
+                <SecureImage
+                    fileName={fileName}
+                    alt="Full view"
+                    style={{ maxWidth: "92vw", maxHeight: "88vh", borderRadius: 16, objectFit: "contain", boxShadow: "0 8px 40px rgba(0,0,0,0.6)" }}
+                />
+            </div>
         </div>
     );
 }
@@ -111,7 +202,7 @@ export default function ProfileDetails() {
 
     const { data: profileData, isLoading, isError, error } = useUserProfile(userId);
     const { data: gallery = [] } = useUserGallery(userId);
-    const [lightboxSrc, setLightboxSrc] = useState(null);
+    const [lightboxFileName, setLightboxFileName] = useState(null);
     const [galleryStart, setGalleryStart] = useState(0);
 
     const getImageUrl = (fileName) => `${IMAGE_DOWNLOAD_URL}${fileName}`;
@@ -126,11 +217,15 @@ export default function ProfileDetails() {
     const address = profileData?.userAddressDetails || {};
     const family = profileData?.userFamilyDetails || {};
 
-    const fullName = [ud.firstName, ud.lastName].filter(Boolean).join(" ") || "—";
+    const firstName = ud.firstName || ud.first_name || "";
+    const lastName = ud.lastName || ud.last_name || "";
+    const fullName = [firstName, lastName].filter(Boolean).join(" ") || "—";
     const initials = fullName.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase() || "?";
 
-    const profilePic = gallery.find(img => img.isProfilePicture);
-    const profilePicFileName = profilePic?.fileName || ud.profilePicture;
+    const profilePic = gallery.find(img => img.isProfilePicture || img.is_profile_picture || img.isProfilePicture === 1 || img.is_profile_picture === 1);
+    const profilePicFileName = profilePic?.fileName || profilePic?.file_name || ud.profilePicture || ud.profile_picture;
+
+
 
     const VISIBLE = 2;
     const visibleGallery = gallery.slice(galleryStart, galleryStart + VISIBLE);
@@ -190,8 +285,8 @@ export default function ProfileDetails() {
                         background: "linear-gradient(135deg, #601000 0%, #9B0424 100%)",
                     }}>
                         {profilePicFileName ? (
-                            <img
-                                src={getImageUrl(profilePicFileName)}
+                            <SecureImage
+                                fileName={profilePicFileName}
                                 alt="Profile"
                                 style={{
                                     width: "100%",
@@ -247,26 +342,29 @@ export default function ProfileDetails() {
                                 }}>
 
 
-                                    {visibleGallery.map((img, i) => (
-                                        <div
-                                            key={img.fileName || i}
-                                            onClick={() => setLightboxSrc(getImageUrl(img.fileName))}
-                                            style={{
-                                                width: 70, height: 70,
-                                                borderRadius: 14,
-                                                overflow: "hidden",
-                                                border: "2px solid #9B0424",
-                                                flexShrink: 0,
-                                                cursor: "pointer",
-                                            }}
-                                        >
-                                            <img
-                                                src={getImageUrl(img.fileName)}
-                                                alt={`Gallery ${i + 1}`}
-                                                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                                            />
-                                        </div>
-                                    ))}
+                                    {visibleGallery.map((img, i) => {
+                                        const fName = img.fileName || img.file_name;
+                                        return (
+                                            <div
+                                                key={fName || i}
+                                                onClick={() => setLightboxFileName(fName)}
+                                                style={{
+                                                    width: 70, height: 70,
+                                                    borderRadius: 14,
+                                                    overflow: "hidden",
+                                                    border: "2px solid #9B0424",
+                                                    flexShrink: 0,
+                                                    cursor: "pointer",
+                                                }}
+                                            >
+                                                <SecureImage
+                                                    fileName={fName}
+                                                    alt={`Gallery ${i + 1}`}
+                                                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                                />
+                                            </div>
+                                        );
+                                    })}
 
 
 
@@ -382,7 +480,7 @@ export default function ProfileDetails() {
                 </div>
             </div>
 
-            <Lightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
+            <Lightbox fileName={lightboxFileName} onClose={() => setLightboxFileName(null)} />
 
             <style>{`
                 @keyframes pd-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }

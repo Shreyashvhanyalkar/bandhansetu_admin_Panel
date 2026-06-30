@@ -95,3 +95,43 @@ export const useSendNotification = () => {
     },
   });
 };
+
+// Upload banner image mutation
+export const useUploadBanner = () => {
+  return useMutation({
+    mutationFn: async (file) => {
+      console.log("Uploading banner file:", file.name);
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const response = await fetch(`${BASE_URL}/api/auth/admin/upload-banner`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "x-app-type": "admin",
+          "Accept-Language": "en-us",
+        },
+        body: formData,
+      });
+
+      const responseText = await response.text();
+      console.log("Upload response status:", response.status);
+      console.log("Upload response text:", responseText);
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (e) {
+        console.error("Failed to parse upload response as JSON:", e);
+        throw new Error(`Server error: ${responseText.substring(0, 200)}`);
+      }
+
+      if (!response.ok) {
+        const errorMessage = data.message || data.error || `Failed to upload banner (${response.status})`;
+        throw new Error(errorMessage);
+      }
+
+      return data;
+    },
+  });
+};

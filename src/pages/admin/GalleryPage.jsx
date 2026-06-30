@@ -1,7 +1,7 @@
 // src/pages/admin/GalleryPage.jsx
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const BASE_URL = import.meta.env.VITE_BASE_URL;
 const IMAGE_DOWNLOAD_URL = `${BASE_URL}/api/file/download/thumbnail_`;
@@ -30,13 +30,103 @@ const useUserGallery = (userId) =>
         staleTime: 5 * 60 * 1000,
     });
 
-// Lightbox
-function Lightbox({ src, onClose }) {
-    if (!src) return null;
+function SecureImage({ fileName, alt, style, className }) {
+    const [imgSrc, setImgSrc] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(false);
+
+    useEffect(() => {
+        if (!fileName) {
+            setImgSrc(null);
+            return;
+        }
+
+        let isMounted = true;
+        const controller = new AbortController();
+
+        const fetchImage = async () => {
+            setLoading(true);
+            setError(false);
+            try {
+                const url = `${BASE_URL}/api/file/download/thumbnail_${fileName}`;
+                const res = await fetch(url, {
+                    signal: controller.signal,
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                        "x-app-type": "admin",
+                    },
+                });
+
+                if (!res.ok) {
+                    throw new Error("Failed to download image");
+                }
+
+                const blob = await res.blob();
+                if (isMounted) {
+                    const objectUrl = URL.createObjectURL(blob);
+                    setImgSrc(prevUrl => {
+                        if (prevUrl) URL.revokeObjectURL(prevUrl);
+                        return objectUrl;
+                    });
+                }
+            } catch (err) {
+                if (err.name !== "AbortError" && isMounted) {
+                    setError(true);
+                }
+            } finally {
+                if (isMounted) {
+                    setLoading(false);
+                }
+            }
+        };
+
+        fetchImage();
+
+        return () => {
+            isMounted = false;
+            controller.abort();
+        };
+    }, [fileName]);
+
+    useEffect(() => {
+        return () => {
+            if (imgSrc) {
+                URL.revokeObjectURL(imgSrc);
+            }
+        };
+    }, [imgSrc]);
+
+    if (loading) {
+        return (
+            <div style={{ ...style, display: "flex", alignItems: "center", justifyContent: "center", background: "#f0e8e8" }} className={className}>
+                <span style={{ fontSize: 12, color: "#9B0424" }}>Loading...</span>
+            </div>
+        );
+    }
+
+    if (error || !imgSrc) {
+        return (
+            <div style={{ ...style, display: "flex", alignItems: "center", justifyContent: "center", background: "#f0e8e8" }} className={className}>
+                <span style={{ fontSize: 24 }}>🖼️</span>
+            </div>
+        );
+    }
+
+    return <img src={imgSrc} alt={alt} style={style} className={className} />;
+}
+
+function Lightbox({ fileName, onClose }) {
+    if (!fileName) return null;
     return (
         <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.92)", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <button onClick={onClose} style={{ position: "absolute", top: 20, right: 20, background: "rgba(255,255,255,0.15)", border: "none", color: "#fff", width: 40, height: 40, borderRadius: "50%", fontSize: 20, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
-            <img src={src} alt="Full view" onClick={e => e.stopPropagation()} style={{ maxWidth: "92vw", maxHeight: "88vh", borderRadius: 16, objectFit: "contain", boxShadow: "0 8px 40px rgba(0,0,0,0.6)" }} />
+            <div onClick={e => e.stopPropagation()}>
+                <SecureImage
+                    fileName={fileName}
+                    alt="Full view"
+                    style={{ maxWidth: "92vw", maxHeight: "88vh", borderRadius: 16, objectFit: "contain", boxShadow: "0 8px 40px rgba(0,0,0,0.6)" }}
+                />
+            </div>
         </div>
     );
 }
@@ -45,7 +135,7 @@ export default function GalleryPage() {
     const navigate = useNavigate();
     const { userId } = useParams();
     const { data: gallery = [], isLoading } = useUserGallery(userId);
-    const [lightboxSrc, setLightboxSrc] = useState(null);
+    const [lightboxFileName, setLightboxFileName] = useState(null);
 
     const getImageUrl = (fileName) => `${IMAGE_DOWNLOAD_URL}${fileName}`;
 
@@ -107,30 +197,33 @@ export default function GalleryPage() {
                                     alignItems: "center",
                                 }}
                             >
-                                {row.map((img, colIdx) => (
-                                    <div
-                                        key={img.fileName || colIdx}
-                                        onClick={() => setLightboxSrc(getImageUrl(img.fileName))}
-                                        style={{
-                                            position: "relative",
-                                            width: 94,
-                                            height: 94,
-                                            borderRadius: "50%",
-                                            overflow: "hidden",
-                                            cursor: "pointer",
-                                            background: "#f0e8e8",
-                                            border: img.isProfilePicture
-                                                ? "2.5px solid #9B0424"
-                                                : "2px solid #d1a0a0",
-                                            flexShrink: 0,
-                                            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                                        }}
-                                    >
-                                        <img
-                                            src={getImageUrl(img.fileName)}
-                                            alt={`Photo ${rowIdx * 3 + colIdx + 1}`}
-                                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                                        />
+                                {row.map((img, colIdx) => {
+                                    const fName = img.fileName || img.file_name;
+                                    const isProfilePic = img.isProfilePicture || img.is_profile_picture || img.isProfilePicture === 1 || img.is_profile_picture === 1;
+                                    return (
+                                        <div
+                                            key={fName || colIdx}
+                                            onClick={() => setLightboxFileName(fName)}
+                                            style={{
+                                                position: "relative",
+                                                width: 94,
+                                                height: 94,
+                                                borderRadius: "50%",
+                                                overflow: "hidden",
+                                                cursor: "pointer",
+                                                background: "#f0e8e8",
+                                                border: isProfilePic
+                                                    ? "2.5px solid #9B0424"
+                                                    : "2px solid #d1a0a0",
+                                                flexShrink: 0,
+                                                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                                            }}
+                                        >
+                                            <SecureImage
+                                                fileName={fName}
+                                                alt={`Photo ${rowIdx * 3 + colIdx + 1}`}
+                                                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                            />
                                         {/* Red minus badge (display only) */}
                                         <div style={{
                                             position: "absolute", top: 4, right: 4,
@@ -141,7 +234,8 @@ export default function GalleryPage() {
                                             <span style={{ color: "#fff", fontSize: 14, lineHeight: 1, fontWeight: 700 }}>−</span>
                                         </div>
                                     </div>
-                                ))}
+                                );
+                            })}
 
                                 {/* Empty placeholder circles to fill row */}
                                 {row.length < 3 && Array.from({ length: 3 - row.length }).map((_, k) => (
@@ -183,7 +277,7 @@ export default function GalleryPage() {
                 )}
             </div>
 
-            <Lightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
+            <Lightbox fileName={lightboxFileName} onClose={() => setLightboxFileName(null)} />
 
             <style>{`
                 @keyframes gal-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }

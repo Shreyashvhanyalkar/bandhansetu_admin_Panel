@@ -149,14 +149,17 @@ function NavGroup({ item, onClose, isMobile, depth = 0 }) {
         to={item.to}
         onClick={() => isMobile && onClose?.()}
         className={({ isActive }) =>
-          `flex items-center gap-2 ${getPaddingClass()} py-2 rounded-lg text-sm font-medium transition-all duration-200 my-0.5 ${isActive
-            ? "shadow-sm border-l-2"
-            : "text-gray-600 hover:bg-gray-100"
+          `flex items-center gap-2 ${getPaddingClass()} py-2 rounded-lg text-sm font-medium transition-all duration-200 my-0.5 ${
+            isActive && depth === 0
+              ? "shadow-sm border-l-2"
+              : isActive && depth > 0
+              ? "font-semibold"
+              : "text-gray-600 hover:bg-gray-100/50"
           }`
         }
         style={({ isActive }) => ({
-          borderColor: isActive ? getActiveBorderColor() : "transparent",
-          backgroundColor: isActive ? theme.primaryLight : "",
+          borderColor: isActive && depth === 0 ? getActiveBorderColor() : "transparent",
+          backgroundColor: isActive && depth === 0 ? theme.primaryLight : "",
           color: isActive ? theme.primary : "",
         })}
       >

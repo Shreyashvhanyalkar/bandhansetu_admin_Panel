@@ -1,5 +1,5 @@
 // hooks/useAdminQueries.js
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
 
 const BASE_URL = import.meta.env.VITE_BASE_URL;
 
@@ -7,32 +7,42 @@ const getAuthHeaders = () => ({
   "Content-Type": "application/json",
   Authorization: `Bearer ${localStorage.getItem("token")}`,
   "x-app-type": "admin",
+  "Accept-Language": "en",
 });
 
 const USERS_KEY = ["admin", "users"];
 
-// ==================== LIST OF USERS ====================
-export const useAllUsers = (filters = {}) => {
+// ==================== INFINITE SCROLL USERS ====================
+export const useAllUsersInfinite = (filters = {}) => {
   const {
-    page = 1,
-    limit = 10,
     search = "",
     status,
     deleted,
+    gender = "",
+    city = "",
+    state = "",
+    limit = 25,
   } = filters;
 
-  return useQuery({
-    queryKey: ["admin", "users", { page, limit, search, status, deleted }],
-    queryFn: async () => {
+  return useInfiniteQuery({
+    queryKey: ["admin", "users", "infinite", { search, status, deleted, gender, city, state, limit }],
+    queryFn: async ({ pageParam = 0 }) => {
       const params = new URLSearchParams();
-      params.set("page", String(page));
       params.set("limit", String(limit));
+      params.set("offset", String(pageParam));
 
+      // Backend filters
       if (search?.trim()) params.set("search", search.trim());
       if (status !== undefined) params.set("status", String(status));
       if (deleted !== undefined) params.set("deleted", String(deleted));
+      
+      // Advanced filters - sent to backend
+      if (gender) params.set("gender", gender);
+      if (city) params.set("city", city);
+      if (state) params.set("state", state);
 
       const url = `${BASE_URL}/api/auth/admin/users?${params.toString()}`;
+      console.log(`Fetching infinite - offset: ${pageParam}, limit: ${limit}`, params.toString());
 
       const res = await fetch(url, { headers: getAuthHeaders() });
 
@@ -42,40 +52,29 @@ export const useAllUsers = (filters = {}) => {
       }
 
       const response = await res.json();
-      let usersData = Array.isArray(response) ? response : response.users || [];
+      console.log("Infinite response:", response);
 
-      let totalPages = 1;
-      let total = usersData.length;
-
-      // Case 1: API returned the entire unpaginated list
-      if (usersData.length > limit) {
-        total = usersData.length;
-        totalPages = Math.ceil(total / limit);
-        usersData = usersData.slice((page - 1) * limit, page * limit);
-      } 
-      // Case 2: API returns an object with pagination metadata
-      else if (!Array.isArray(response) && (response.pagination || response.total !== undefined || response.total_pages !== undefined)) {
-        const p = response.pagination || response;
-        total = p.total ?? p.total_items ?? usersData.length;
-        totalPages = p.total_pages ?? p.totalPages ?? Math.ceil(total / limit);
-      }
-      // Case 3: API returned a paginated slice but NO metadata (plain array)
-      else {
-        if (usersData.length === limit) {
-          totalPages = page + 1; // Assume there is a next page
-          total = page * limit + 1; // Fake total
-        } else {
-          totalPages = page;
-          total = (page - 1) * limit + usersData.length;
-        }
+      // Handle array response (no pagination metadata)
+      let usersData = [];
+      
+      if (Array.isArray(response)) {
+        usersData = response;
+      } else if (response.users || response.data) {
+        usersData = response.users || response.data || [];
+      } else {
+        usersData = response || [];
       }
 
-      const paginationData = { page, limit, total, total_pages: totalPages };
+      if (!Array.isArray(usersData)) {
+        usersData = [];
+      }
 
+      // Map users to consistent format
       const users = usersData.map((u) => ({
-        id: u.id,
+        id: u.id || u.userId,
         platformId: u.platform_id || u.platformId || "",
-        name: `${u.firstName || u.first_name || ""} ${u.middleName || u.middle_name || ""} ${u.lastName || u.last_name || ""}`.trim(),
+        firstName: u.firstName || u.first_name || "",
+        lastName: u.lastName || u.last_name || "",
         email: u.email,
         mobile: String(u.mobile_number || u.mobileNumber || ""),
         countryCode: u.country_code || u.countryCode || "+91",
@@ -86,15 +85,121 @@ export const useAllUsers = (filters = {}) => {
         age: u.age ?? null,
         cityName: u.cityName || u.city_name || "",
         stateName: u.stateName || u.state_name || "",
+        religionName: u.religionName || u.religion_name || "",
+        createdAt: u.created_at || u.createdAt,
+      }));
+
+      // Determine if there are more users
+      const hasMore = usersData.length === limit;
+      const nextOffset = hasMore ? pageParam + limit : undefined;
+
+      return {
+        users,
+        pagination: {
+          offset: pageParam,
+          limit,
+          hasMore,
+          nextOffset,
+          currentPage: Math.floor(pageParam / limit) + 1,
+        },
+      };
+    },
+    getNextPageParam: (lastPage) => lastPage.pagination.nextOffset,
+    initialPageParam: 0,
+    staleTime: 2 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+};
+
+// ==================== REGULAR PAGINATED USERS ====================
+export const useAllUsers = (filters = {}) => {
+  const {
+    offset = 0,
+    limit = 10,
+    search = "",
+    status,
+    deleted,
+    gender = "",
+    city = "",
+    state = "",
+  } = filters;
+
+  return useQuery({
+    queryKey: ["admin", "users", { offset, limit, search, status, deleted, gender, city, state }],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      params.set("limit", String(limit));
+      params.set("offset", String(offset));
+
+      if (search?.trim()) params.set("search", search.trim());
+      if (status !== undefined) params.set("status", String(status));
+      if (deleted !== undefined) params.set("deleted", String(deleted));
+      if (gender) params.set("gender", gender);
+      if (city) params.set("city", city);
+      if (state) params.set("state", state);
+
+      const url = `${BASE_URL}/api/auth/admin/users?${params.toString()}`;
+      console.log("Fetching users with URL:", url);
+
+      const res = await fetch(url, { headers: getAuthHeaders() });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || "Failed to fetch users");
+      }
+
+      const response = await res.json();
+
+      let usersData = [];
+      let total = 0;
+      
+      if (Array.isArray(response)) {
+        usersData = response;
+        const hasMore = response.length === limit;
+        total = hasMore ? offset + limit + 1 : offset + response.length;
+      } else if (response.users || response.data) {
+        usersData = response.users || response.data || [];
+        total = response.total || response.total_count || usersData.length;
+      } else {
+        usersData = response || [];
+        total = usersData.length;
+      }
+
+      if (!Array.isArray(usersData)) {
+        usersData = [];
+      }
+
+      const totalPages = Math.ceil(total / limit);
+      const hasNextPage = offset + limit < total;
+
+      const users = usersData.map((u) => ({
+        id: u.id || u.userId,
+        platformId: u.platform_id || u.platformId || "",
+        firstName: u.firstName || u.first_name || "",
+        lastName: u.lastName || u.last_name || "",
+        email: u.email,
+        mobile: String(u.mobile_number || u.mobileNumber || ""),
+        countryCode: u.country_code || u.countryCode || "+91",
+        rawStatus: u.status ?? 0,
+        status: u.status === 1 ? "approved" : "pending",
+        isDeleted: !!u.deleted_at,
+        gender: u.gender || "",
+        age: u.age ?? null,
+        cityName: u.cityName || u.city_name || "",
+        stateName: u.stateName || u.state_name || "",
+        religionName: u.religionName || u.religion_name || "",
+        createdAt: u.created_at || u.createdAt,
       }));
 
       return {
         users,
-        pagination: paginationData || {
-          page,
+        pagination: {
+          offset,
           limit,
-          total: users.length,
-          total_pages: Math.ceil(users.length / limit),
+          total,
+          total_pages: totalPages,
+          current_page: Math.floor(offset / limit) + 1,
+          has_next_page: hasNextPage,
         },
       };
     },
@@ -120,11 +225,10 @@ export const useUserProfile = (userId) => {
       }
 
       const data = await res.json();
-      // Return the user object (adjust key if your API wraps it differently)
       return data.user || data;
     },
     enabled: !!userId,
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    staleTime: 5 * 60 * 1000,
     cacheTime: 10 * 60 * 1000,
   });
 };
@@ -150,8 +254,8 @@ export const useToggleUserStatus = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: USERS_KEY });
-      // Also invalidate profile if open
       queryClient.invalidateQueries({ queryKey: ["admin", "userProfile"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "users", "infinite"] });
     },
   });
 };
@@ -175,6 +279,7 @@ export const useDeleteUser = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: USERS_KEY });
+      queryClient.invalidateQueries({ queryKey: ["admin", "users", "infinite"] });
     },
   });
 };
@@ -198,11 +303,12 @@ export const useRestoreUser = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: USERS_KEY });
+      queryClient.invalidateQueries({ queryKey: ["admin", "users", "infinite"] });
     },
   });
 };
 
-// Legacy hooks (kept for backward compatibility)
+// ==================== LEGACY HOOKS ====================
 export const useApproveUser = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -230,6 +336,7 @@ export const useApproveUser = () => {
     },
   });
 };
+
 export const useUpdateUser = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -257,4 +364,4 @@ export const useUpdateUser = () => {
       });
     },
   });
-};  
+};

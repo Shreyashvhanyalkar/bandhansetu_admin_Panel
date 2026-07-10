@@ -22,15 +22,15 @@ const C = {
   primaryDark: "#601000",    // Dark Burgundy
   primaryLight: "#fef2f2",   // Red light background
   primaryBorder: "#fca5a5",  // Red border
-  
+
   caste: "#0891b2",          // Cyan for Castes
   casteBg: "#ecfeff",
   casteBorder: "#a5f3fc",
-  
+
   sub: "#059669",            // Emerald for Sub-castes
   subBg: "#ecfdf5",
   subBorder: "#a7f3d0",
-  
+
   danger: "#dc2626",
   textPrimary: "#0f172a",    // Slate 900
   textSecondary: "#475569",  // Slate 600
@@ -106,15 +106,21 @@ function Modal({ isOpen, onClose, title, placeholder, existing, onSubmit, isPend
     onClose();
   };
 
-  const focusRing = accent === C.primary 
-    ? "focus:border-[#bd201c] focus:ring-[#fef2f2]" 
-    : accent === C.caste 
-    ? "focus:border-cyan-500 focus:ring-cyan-50" 
-    : "focus:border-emerald-500 focus:ring-emerald-50";
+  const focusRing = accent === C.primary
+    ? "focus:border-[#bd201c] focus:ring-[#fef2f2]"
+    : accent === C.caste
+      ? "focus:border-cyan-500 focus:ring-cyan-50"
+      : "focus:border-emerald-500 focus:ring-emerald-50";
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-fade-in">
-      <div className="bg-white w-full max-w-md rounded-2xl shadow-xl border border-slate-100 overflow-hidden animate-scale-in">
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-fade-in"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white w-full max-w-md rounded-2xl shadow-xl border border-slate-100 overflow-hidden animate-scale-in"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="h-1.5 w-full" style={{ background: accent }} />
         <div className="p-6 sm:p-7 space-y-5">
           <h2 className="text-base font-bold text-gray-900">{title}</h2>
@@ -128,8 +134,8 @@ function Modal({ isOpen, onClose, title, placeholder, existing, onSubmit, isPend
             autoFocus
           />
           <div className="flex gap-2.5 pt-1.5">
-            <button 
-              onClick={onClose} 
+            <button
+              onClick={onClose}
               className="flex-1 py-2.5 text-xs font-bold text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-250/30 rounded-xl transition cursor-pointer"
             >
               Cancel
@@ -164,8 +170,8 @@ function ConfirmDialog({ isOpen, onClose, onConfirm, message, isPending }) {
           <h3 className="text-base font-bold text-gray-900 mb-1.5">Delete Confirmation</h3>
           <p className="text-xs text-gray-500 leading-normal mb-6 px-2">{message}</p>
           <div className="flex gap-2.5">
-            <button 
-              onClick={onClose} 
+            <button
+              onClick={onClose}
               className="flex-1 py-2.5 text-xs font-bold text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-250/30 rounded-xl transition cursor-pointer"
             >
               Cancel
@@ -189,11 +195,10 @@ function ListItem({ label, active, onClick, onEdit, onDelete, themeColor, hasChe
   return (
     <div
       onClick={onClick}
-      className={`group relative flex items-center justify-between py-1.5 px-3 rounded-lg border transition-all duration-200 cursor-pointer ${
-        active
+      className={`group relative flex items-center justify-between py-1.5 px-3 rounded-lg border transition-all duration-200 cursor-pointer ${active
           ? "bg-slate-50/70 border-slate-205 shadow-xs"
           : "bg-white border-slate-100 hover:border-slate-150 hover:bg-slate-50/20"
-      }`}
+        }`}
       style={{
         borderLeft: active ? `3px solid ${themeColor}` : undefined,
         paddingLeft: active ? "10px" : undefined,
@@ -315,7 +320,7 @@ export default function ReligionManagement() {
 
   // Filters
   const filteredReligions = religions.filter((r) =>
-    r.religion_name.toLowerCase().includes(religionSearch.toLowerCase())
+    (r.religion_name ?? "").toLowerCase().includes(religionSearch.toLowerCase())
   );
 
   const filteredCastes = castes.filter((c) =>
@@ -343,7 +348,7 @@ export default function ReligionManagement() {
       `}</style>
 
       <div className="max-w-7xl mx-auto space-y-6">
-        
+
         {/* Header Block */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-5">
           <div>
@@ -400,8 +405,8 @@ export default function ReligionManagement() {
             <span className="text-2xl">⚠️</span>
             <p className="text-red-900 font-bold text-sm mt-2">Failed to load religions</p>
             <p className="text-red-600 text-xs mt-1">Please verify server configuration and connection.</p>
-            <button 
-              onClick={() => refetchReligions()} 
+            <button
+              onClick={() => refetchReligions()}
               className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-semibold shadow-sm transition cursor-pointer"
             >
               Retry Connection
@@ -409,7 +414,7 @@ export default function ReligionManagement() {
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
+
             {/* 1. Religions Column */}
             <div className="bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col h-[500px]">
               {/* Card Header */}
@@ -429,10 +434,10 @@ export default function ReligionManagement() {
 
               {/* Toolbar */}
               <div className="p-2.5 bg-slate-50/40 border-b border-slate-100">
-                <ColumnSearch 
-                  value={religionSearch} 
-                  onChange={setReligionSearch} 
-                  placeholder="Search religions..." 
+                <ColumnSearch
+                  value={religionSearch}
+                  onChange={setReligionSearch}
+                  placeholder="Search religions..."
                 />
               </div>
 
@@ -495,9 +500,9 @@ export default function ReligionManagement() {
 
               {/* Toolbar */}
               <div className="p-2.5 bg-slate-50/40 border-b border-slate-100">
-                <ColumnSearch 
-                  value={casteSearch} 
-                  onChange={setCasteSearch} 
+                <ColumnSearch
+                  value={casteSearch}
+                  onChange={setCasteSearch}
                   placeholder={selectedReligionId ? "Search castes..." : "Select religion first"}
                   disabled={!selectedReligionId}
                 />
@@ -570,9 +575,9 @@ export default function ReligionManagement() {
 
               {/* Toolbar */}
               <div className="p-2.5 bg-slate-50/40 border-b border-slate-100">
-                <ColumnSearch 
-                  value={subcasteSearch} 
-                  onChange={setSubcasteSearch} 
+                <ColumnSearch
+                  value={subcasteSearch}
+                  onChange={setSubcasteSearch}
                   placeholder={selectedCasteId ? "Search sub-castes..." : "Select caste first"}
                   disabled={!selectedCasteId}
                 />
@@ -611,7 +616,7 @@ export default function ReligionManagement() {
                       active={false} // leaf nodes don't trigger sub-selection
                       themeColor={C.sub}
                       hasChevron={false}
-                      onClick={() => {}} // no-op on leaf click
+                      onClick={() => { }} // no-op on leaf click
                       onEdit={() => setEditingSubcast(s)}
                       onDelete={() => setDeletingSubcast(s)}
                     />

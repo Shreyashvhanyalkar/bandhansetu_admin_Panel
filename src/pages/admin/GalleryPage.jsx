@@ -185,8 +185,9 @@ export default function GalleryPage() {
                 ) : (
                     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                         {rows.map((row, rowIdx) => (
-                            <div
+                           <div
                                 key={rowIdx}
+                                data-testid={rowIdx === 0 ? "gallery-row-first" : "gallery-row"}
                                 style={{
                                     display: "flex",
                                     gap: 12,
@@ -203,6 +204,7 @@ export default function GalleryPage() {
                                     return (
                                         <div
                                             key={fName || colIdx}
+                                            data-testid={isProfilePic ? "profile-image" : "gallery-image"}
                                             onClick={() => setLightboxFileName(fName)}
                                             style={{
                                                 position: "relative",
@@ -225,7 +227,8 @@ export default function GalleryPage() {
                                                 style={{ width: "100%", height: "100%", objectFit: "cover" }}
                                             />
                                         {/* Red minus badge (display only) */}
-                                        <div style={{
+                                        {/* Red minus badge (display only) */}
+                                        <div data-testid="minus-badge" style={{
                                             position: "absolute", top: 4, right: 4,
                                             width: 20, height: 20, borderRadius: "50%",
                                             background: "#9B0424",
@@ -239,7 +242,7 @@ export default function GalleryPage() {
 
                                 {/* Empty placeholder circles to fill row */}
                                 {row.length < 3 && Array.from({ length: 3 - row.length }).map((_, k) => (
-                                    <div key={`empty-${k}`} style={{
+                                    <div key={`empty-${k}`} data-testid="gallery-placeholder" style={{
                                         width: 94, height: 94, borderRadius: "50%",
                                         background: "rgba(155,4,36,0.06)",
                                         border: "2px dashed #d1a0a0",

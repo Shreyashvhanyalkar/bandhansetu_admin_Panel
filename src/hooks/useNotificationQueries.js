@@ -1,6 +1,5 @@
-// hooks/useNotificationQueries.js - Simplified version
-
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+// hooks/useNotificationQueries.js
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
 
 const BASE_URL = import.meta.env.VITE_BASE_URL;
 
@@ -11,14 +10,97 @@ const getAuthHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem("token")}`,
 });
 
-// Fetch all users for selection
-export const useAllUsers = (searchTerm = "", page = 1, limit = 50) => {
+// ==================== INFINITE SCROLL USERS FOR SELECT ====================
+export const useAllUsersInfinite = (searchTerm = "", limit = 20) => {
+  return useInfiniteQuery({
+    queryKey: ["admin", "users", "select", "infinite", searchTerm],
+    queryFn: async ({ pageParam = 0 }) => {
+      const params = new URLSearchParams();
+      params.set("limit", String(limit));
+      params.set("offset", String(pageParam));
+
+      if (searchTerm?.trim()) params.set("search", searchTerm.trim());
+
+      const url = `${BASE_URL}/api/auth/admin/users?${params.toString()}`;
+      console.log(`Fetching users for select - offset: ${pageParam}, limit: ${limit}, search: "${searchTerm}"`);
+
+      const response = await fetch(url, {
+        headers: getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to fetch users");
+      }
+
+      const data = await response.json();
+      console.log("Select users response:", data);
+
+      // Handle array response (no pagination metadata)
+      let usersData = [];
+      
+      if (Array.isArray(data)) {
+        usersData = data;
+      } else if (data.users || data.data) {
+        usersData = data.users || data.data || [];
+      } else {
+        usersData = data || [];
+      }
+
+      if (!Array.isArray(usersData)) {
+        usersData = [];
+      }
+
+      // Map users to consistent format
+      const users = usersData.map((u) => ({
+        id: u.id || u.userId,
+        platformId: u.platform_id || u.platformId || "",
+        firstName: u.firstName || u.first_name || "",
+        lastName: u.lastName || u.last_name || "",
+        email: u.email,
+        mobile: String(u.mobile_number || u.mobileNumber || ""),
+        countryCode: u.country_code || u.countryCode || "+91",
+        rawStatus: u.status ?? 0,
+        status: u.status === 1 ? "approved" : "pending",
+        isDeleted: !!u.deleted_at,
+        gender: u.gender || "",
+        age: u.age ?? null,
+        cityName: u.cityName || u.city_name || "",
+        stateName: u.stateName || u.state_name || "",
+        religionName: u.religionName || u.religion_name || "",
+        createdAt: u.created_at || u.createdAt,
+      }));
+
+      // Determine if there are more users
+      const hasMore = usersData.length === limit;
+      const nextOffset = hasMore ? pageParam + limit : undefined;
+
+      return {
+        users,
+        pagination: {
+          offset: pageParam,
+          limit,
+          hasMore,
+          nextOffset,
+          currentPage: Math.floor(pageParam / limit) + 1,
+        },
+      };
+    },
+    getNextPageParam: (lastPage) => lastPage.pagination.nextOffset,
+    initialPageParam: 0,
+    staleTime: 2 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+};
+
+// ==================== REGULAR USERS (Keep for backward compatibility) ====================
+export const useAllUsers = (searchTerm = "", page = 1, limit = 100) => {
   return useQuery({
     queryKey: ["admin", "users", "all", searchTerm, page],
     queryFn: async () => {
       const url = searchTerm 
         ? `${BASE_URL}/api/auth/admin/users/search?q=${encodeURIComponent(searchTerm)}&page=${page}&limit=${limit}`
-        : `${BASE_URL}/api/auth/admin/users?page=${page}&limit=${limit}&status=1`;
+        : `${BASE_URL}/api/auth/admin/users?page=${page}&limit=${limit}`;
       
       const response = await fetch(url, {
         headers: getAuthHeaders(),
@@ -36,7 +118,7 @@ export const useAllUsers = (searchTerm = "", page = 1, limit = 50) => {
   });
 };
 
-// Fetch religions
+// ==================== RELIGIONS ====================
 export const useReligions = () => {
   return useQuery({
     queryKey: ["admin", "religions"],
@@ -57,7 +139,7 @@ export const useReligions = () => {
   });
 };
 
-// Send notification mutation
+// ==================== SEND NOTIFICATION ====================
 export const useSendNotification = () => {
   const queryClient = useQueryClient();
   
@@ -96,7 +178,7 @@ export const useSendNotification = () => {
   });
 };
 
-// Upload banner image mutation
+// ==================== UPLOAD BANNER ====================
 export const useUploadBanner = () => {
   return useMutation({
     mutationFn: async (file) => {

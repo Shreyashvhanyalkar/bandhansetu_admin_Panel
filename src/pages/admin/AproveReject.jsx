@@ -1,9 +1,11 @@
 // src/pages/admin/AproveReject.jsx
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { useInView } from "react-intersection-observer";
 
 import {
   useAllUsers,
+  useAllUsersInfinite,
   useToggleUserStatus,
   useDeleteUser,
   useRestoreUser,
@@ -11,11 +13,11 @@ import {
 
 // ─── Design Tokens ────────────────────────────────────────────────────────────
 const C = {
-  primary: "#bd201c",      // main red
-  primaryDark: "#601000",  // dark red
-  primaryLight: "#fef2f2", // red-50
-  primaryMid: "#fee2e2",   // red-100
-  primaryBorder: "#fca5a5",// red-300
+  primary: "#bd201c",
+  primaryDark: "#601000",
+  primaryLight: "#fef2f2",
+  primaryMid: "#fee2e2",
+  primaryBorder: "#fca5a5",
   active: "#059669",
   activeBg: "#ecfdf5",
   activeBorder: "#a7f3d0",
@@ -31,20 +33,7 @@ const C = {
   infoBorder: "#bfdbfe",
 };
 
-const AVATAR_PALETTE = ["#bd201c", "#9B0424", "#601000", "#dc2626", "#ef4444", "#7f1d1d"];
-
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-const MOCK_SENT_REQUESTS = [
-  { id: 1, to: "Priya Sharma", toId: "101", avatar: "PS", color: "#bd201c", status: "accepted", date: "12 Jan 2025" },
-  { id: 2, to: "Aarti Verma", toId: "102", avatar: "AV", color: "#601000", status: "pending", date: "18 Jan 2025" },
-];
-const MOCK_RECEIVED_REQUESTS = [
-  { id: 7, from: "Rahul Mehta", fromId: "201", avatar: "RM", color: "#bd201c", status: "accepted", date: "10 Jan 2025" },
-];
-const MOCK_DOCS = [
-  { id: 1, name: "Aadhaar Card", type: "identity", status: "verified", icon: "🪪", url: "#" },
-  { id: 3, name: "10th Marksheet", type: "education", status: "pending", icon: "📄", url: "#" },
-];
+const AVATAR_PALETTE = ["#bd201c", "#9B0424", "#601000", "#dc2626", "#ef4444", "#7f1d1f"];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const avatarColor = (id) => AVATAR_PALETTE[String(id).charCodeAt(0) % AVATAR_PALETTE.length] || C.primary;
@@ -227,9 +216,11 @@ function UserDetailDrawer({ user, isDeletedView, onClose, onToggle, onDelete, on
           {/* Header */}
           <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-start bg-slate-50/50 shrink-0">
             <div className="flex items-center gap-4">
-              <Avatar name={user.name} id={user.id} size={56} muted={isDeletedView} />
+              <Avatar name={`${user.firstName} ${user.lastName}`} id={user.id} size={56} muted={isDeletedView} />
               <div>
-                <h2 className={`text-xl font-bold tracking-tight ${isDeletedView ? "text-gray-400 line-through" : "text-gray-900"}`}>{user.name}</h2>
+                <h2 className={`text-xl font-bold tracking-tight ${isDeletedView ? "text-gray-400 line-through" : "text-gray-900"}`}>
+                  {user.firstName} {user.lastName}
+                </h2>
                 <p className="text-sm text-gray-500">{user.email}</p>
                 <div className="mt-2"><StatusBadge status={user.rawStatus} isDeleted={isDeletedView && user.isDeleted} /></div>
               </div>
@@ -267,6 +258,10 @@ function UserDetailDrawer({ user, isDeletedView, onClose, onToggle, onDelete, on
                     <span className="text-xs font-bold text-gray-400 uppercase">Gender</span>
                     <p className="text-sm font-medium text-gray-800 mt-1">{user.gender || "—"}</p>
                   </div>
+                  <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                    <span className="text-xs font-bold text-gray-400 uppercase">Age</span>
+                    <p className="text-sm font-medium text-gray-800 mt-1">{user.age || "—"}</p>
+                  </div>
                 </div>
 
                 <div className="space-y-3 pt-4 border-t border-gray-100">
@@ -279,7 +274,6 @@ function UserDetailDrawer({ user, isDeletedView, onClose, onToggle, onDelete, on
                 </div>
               </div>
             )}
-            {/* Minimal implementations for other tabs to save space */}
             {activeTab !== "profile" && (
               <div className="py-10 text-center text-gray-400 text-sm animate-fadeIn">
                 Detailed view available in full profile.
@@ -323,8 +317,20 @@ function Chip({ label, onRemove }) {
 // ─── Main View ────────────────────────────────────────────────────────────────
 export default function ApproveReject() {
   const navigate = useNavigate();
-  const [filters, setFilters] = useState({ page: 1, limit: 25, search: "", status: 1, deleted: undefined });
-  const [advFilters, setAdvFilters] = useState({ gender: "", ageMin: "", ageMax: "", city: "", state: "" });
+  const [filters, setFilters] = useState({ 
+    offset: 0,
+    limit: 25, 
+    search: "", 
+    status: 1, 
+    deleted: undefined 
+  });
+  const [advFilters, setAdvFilters] = useState({ 
+    gender: "", 
+    ageMin: "", 
+    ageMax: "", 
+    city: "", 
+    state: "" 
+  });
   const [searchInput, setSearchInput] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [selected, setSelected] = useState(null);
@@ -334,25 +340,60 @@ export default function ApproveReject() {
   const [toast, setToast] = useState({ show: false, message: "", type: "" });
   const [isExporting, setIsExporting] = useState(false);
 
+  // Intersection Observer for infinite scroll
+  const { ref: loadMoreRef, inView } = useInView({
+    threshold: 0.1,
+    rootMargin: "100px",
+  });
+
+  // Debounced search
   useEffect(() => {
-    const t = setTimeout(() => setFilters((f) => ({ ...f, search: searchInput.trim(), page: 1 })), 400);
+    const t = setTimeout(() => {
+      // Remove any + signs and trim
+      const cleanSearch = searchInput.trim().replace(/\+/g, ' ');
+      setFilters((f) => ({ ...f, search: cleanSearch, offset: 0 }));
+    }, 400);
     return () => clearTimeout(t);
   }, [searchInput]);
 
-  const { data, isLoading, isFetching, isError, error, refetch } = useAllUsers(filters);
-  const rawUsers = data?.users || data?.data?.users || [];
-  const pagination = data?.pagination || data?.data?.pagination || null;
+  // Build filter object for API - sends ALL filters to backend
+  const buildFilters = useCallback(() => {
+    return {
+      search: filters.search,
+      status: filters.status,
+      deleted: filters.deleted,
+      limit: filters.limit,
+      // Advanced filters - sent to backend
+      ...(advFilters.gender && { gender: advFilters.gender }),
+      ...(advFilters.city && { city: advFilters.city }),
+      ...(advFilters.state && { state: advFilters.state }),
+      // Age filters - if backend supports them
+      // ...(advFilters.ageMin && { minAge: advFilters.ageMin }),
+      // ...(advFilters.ageMax && { maxAge: advFilters.ageMax }),
+    };
+  }, [filters, advFilters]);
 
-  // Client-side filtering
-  const users = rawUsers.filter(u => {
-    if (advFilters.gender && u.gender !== advFilters.gender) return false;
-    if (advFilters.ageMin !== "" && u.age != null && u.age < Number(advFilters.ageMin)) return false;
-    if (advFilters.ageMax !== "" && u.age != null && u.age > Number(advFilters.ageMax)) return false;
-    if (advFilters.state && !u.stateName?.toLowerCase().includes(advFilters.state.toLowerCase())) return false;
-    if (advFilters.city && !u.cityName?.toLowerCase().includes(advFilters.city.toLowerCase())) return false;
-    return true;
-  });
+  // Infinite scroll query with all filters
+  const infiniteQuery = useAllUsersInfinite(buildFilters());
 
+  // Get users from infinite query
+  const allUsers = infiniteQuery.data?.pages?.flatMap(page => page.users) || [];
+  const isLoading = infiniteQuery.isLoading;
+  const isFetchingMore = infiniteQuery.isFetchingNextPage;
+  const hasNextPage = infiniteQuery.hasNextPage;
+  const totalLoaded = allUsers.length;
+
+  // NO CLIENT-SIDE FILTERING - all filtering is done on backend
+  const users = allUsers;
+
+  // Load more when scrolled to bottom
+  useEffect(() => {
+    if (inView && hasNextPage && !isFetchingMore) {
+      infiniteQuery.fetchNextPage();
+    }
+  }, [inView, hasNextPage, isFetchingMore, infiniteQuery]);
+
+  // Mutations
   const toggleMutation = useToggleUserStatus();
   const deleteMutation = useDeleteUser();
   const restoreMutation = useRestoreUser();
@@ -369,7 +410,7 @@ export default function ApproveReject() {
     setFilters(f => ({ 
       ...f, 
       [k]: v, 
-      ...(k !== 'page' ? { page: 1 } : {}) 
+      ...(k !== 'offset' ? { offset: 0 } : {}) 
     }));
     setSelected(null);
   }, []);
@@ -379,42 +420,42 @@ export default function ApproveReject() {
     toggleMutation.mutate({ userId: user.id, status: next }, {
       onSuccess: () => {
         if (selected?.id === user.id) setSelected({ ...selected, rawStatus: next });
-        notify(`${user.name} ${next === 1 ? "activated" : "deactivated"}`, "success");
-        refetch();
+        notify(`${user.firstName} ${next === 1 ? "activated" : "deactivated"}`, "success");
+        infiniteQuery.refetch();
       },
       onError: () => notify("Failed to update status", "error"),
     });
-  }, [toggleMutation, refetch, selected]);
+  }, [toggleMutation, infiniteQuery, selected]);
 
   const confirmDelete = useCallback(() => {
     deleteMutation.mutate(deleteTarget.id, {
       onSuccess: () => {
         setDeleteTarget(null);
         if (selected?.id === deleteTarget.id) setSelected(null);
-        notify(`${deleteTarget.name} deleted`, "success");
-        refetch();
+        notify(`${deleteTarget.firstName} deleted`, "success");
+        infiniteQuery.refetch();
       },
       onError: () => notify("Failed to delete user", "error"),
     });
-  }, [deleteMutation, deleteTarget, selected, refetch]);
+  }, [deleteMutation, deleteTarget, selected, infiniteQuery]);
 
   const confirmRestore = useCallback(() => {
     restoreMutation.mutate(restoreTarget.id, {
       onSuccess: () => {
         setRestoreTarget(null);
         if (selected?.id === restoreTarget.id) setSelected(null);
-        notify(`${restoreTarget.name} restored`, "success");
-        refetch();
+        notify(`${restoreTarget.firstName} restored`, "success");
+        infiniteQuery.refetch();
       },
       onError: () => notify("Failed to restore user", "error"),
     });
-  }, [restoreMutation, restoreTarget, selected, refetch]);
+  }, [restoreMutation, restoreTarget, selected, infiniteQuery]);
 
   const handleResetPassword = async (pwd) => {
     setResetPending(true);
     await new Promise(r => setTimeout(r, 1000));
     setResetPending(false);
-    notify(`Password reset for ${selected?.name}`, "success");
+    notify(`Password reset for ${selected?.firstName}`, "success");
   };
 
   const handleExportCSV = async () => {
@@ -424,6 +465,9 @@ export default function ApproveReject() {
       if (filters.search?.trim()) params.set("search", filters.search.trim());
       if (filters.status !== undefined) params.set("status", String(filters.status));
       if (filters.deleted !== undefined) params.set("deleted", String(filters.deleted));
+      if (advFilters.gender) params.set("gender", advFilters.gender);
+      if (advFilters.city) params.set("city", advFilters.city);
+      if (advFilters.state) params.set("state", advFilters.state);
 
       const BASE_URL = import.meta.env.VITE_BASE_URL;
       const url = `${BASE_URL}/api/auth/admin/users/export?${params.toString()}`;
@@ -497,32 +541,41 @@ export default function ApproveReject() {
 
   const updateAdvFilter = useCallback((k, v) => {
     setAdvFilters(f => ({ ...f, [k]: v }));
+    // Reset offset when filter changes to start from beginning
+    setFilters(f => ({ ...f, offset: 0 }));
   }, []);
 
   const clearAdvancedFilters = () => {
     setAdvFilters({ gender: "", ageMin: "", ageMax: "", city: "", state: "" });
+    setFilters(f => ({ ...f, offset: 0 }));
   };
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans p-4 sm:p-8">
-      <Toast {...toast} />
+      <Toast show={toast.show} message={toast.message} type={toast.type} />
       <div className="max-w-[1400px] mx-auto space-y-6">
 
-        {/* Header & Breadcrumb */}
+        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">User Management</h1>
-            <p className="text-sm text-gray-500 mt-1">Manage all registered accounts and moderation queues.</p>
+            <p className="text-sm text-gray-500 mt-1">
+              Infinite scroll · {totalLoaded} users loaded
+              {isFetchingMore && " (loading more...)"}
+              {activeFilterCount > 0 && ` · ${activeFilterCount} filter(s) active`}
+            </p>
           </div>
-          {isDeletedView && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 shadow-sm">
-              <span>⚠️ Soft-Deleted View Active</span>
-              <button onClick={() => updateFilter('deleted', undefined)} className="underline hover:text-red-900 ml-2">Exit</button>
-            </div>
-          )}
+          <div className="flex items-center gap-3 flex-wrap">
+            {isDeletedView && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 shadow-sm">
+                <span>⚠️ Soft-Deleted View Active</span>
+                <button onClick={() => updateFilter('deleted', undefined)} className="underline hover:text-red-900 ml-2">Exit</button>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Professional Toolbar */}
+        {/* Toolbar */}
         <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm space-y-3">
           <div className="flex flex-col lg:flex-row justify-between items-center gap-3">
             {/* Search Box */}
@@ -532,7 +585,7 @@ export default function ApproveReject() {
               </span>
               <input
                 type="text"
-                placeholder="Search by name, email or ID..."
+                placeholder="Search by name, email or mobile..."
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 className="w-full pl-11 pr-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl outline-none transition-all focus:bg-white focus:border-[#fca5a5] focus:ring-4 focus:ring-[#fee2e2]"
@@ -577,11 +630,11 @@ export default function ApproveReject() {
             </div>
           </div>
 
-          {/* Advanced Filter Panel */}
+          {/* Advanced Filter Panel - ALL filters sent to backend */}
           {showFilters && (
             <div className="border-t border-gray-100 pt-3 animate-slideDown">
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                {/* Gender */}
+                {/* Gender - Sent to Backend */}
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Gender</label>
                   <select
@@ -595,9 +648,9 @@ export default function ApproveReject() {
                     <option value="Other">Other</option>
                   </select>
                 </div>
-
-                {/* Min Age */}
-                <div className="space-y-1">
+                
+                {/* Min Age - Client-side (backend may not support) */}
+                {/* <div className="space-y-1">
                   <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Min Age</label>
                   <input
                     type="number" min="18" max="80"
@@ -606,10 +659,10 @@ export default function ApproveReject() {
                     onChange={e => updateAdvFilter('ageMin', e.target.value)}
                     className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 outline-none focus:border-[#fca5a5] focus:ring-2 focus:ring-[#fef2f2] transition"
                   />
-                </div>
+                </div> */}
 
-                {/* Max Age */}
-                <div className="space-y-1">
+                {/* Max Age - Client-side (backend may not support) */}
+                {/* <div className="space-y-1">
                   <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Max Age</label>
                   <input
                     type="number" min="18" max="80"
@@ -618,10 +671,10 @@ export default function ApproveReject() {
                     onChange={e => updateAdvFilter('ageMax', e.target.value)}
                     className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 outline-none focus:border-[#fca5a5] focus:ring-2 focus:ring-[#fef2f2] transition"
                   />
-                </div>
+                </div> */}
 
-                {/* State */}
-                <div className="space-y-1">
+                {/* State - Sent to Backend */}
+                {/* <div className="space-y-1">
                   <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">State</label>
                   <input
                     type="text"
@@ -630,9 +683,9 @@ export default function ApproveReject() {
                     onChange={e => updateAdvFilter('state', e.target.value)}
                     className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 outline-none focus:border-[#fca5a5] focus:ring-2 focus:ring-[#fef2f2] transition"
                   />
-                </div>
+                </div> */}
 
-                {/* City */}
+                {/* City - Sent to Backend */}
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">City</label>
                   <input
@@ -647,7 +700,10 @@ export default function ApproveReject() {
 
               {activeFilterCount > 0 && (
                 <div className="mt-3 flex items-center gap-2 flex-wrap">
-                  <span className="text-xs text-gray-500 font-medium">{activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''} active · Showing {users.length} of {rawUsers.length}:</span>
+                  <span className="text-xs text-gray-500 font-medium">
+                    {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''} active · 
+                    <span className="font-bold text-gray-900 ml-1">{users.length}</span> users found
+                  </span>
                   {advFilters.gender && <Chip label={`Gender: ${advFilters.gender}`} onRemove={() => updateAdvFilter('gender', '')} />}
                   {advFilters.ageMin && <Chip label={`Age ≥ ${advFilters.ageMin}`} onRemove={() => updateAdvFilter('ageMin', '')} />}
                   {advFilters.ageMax && <Chip label={`Age ≤ ${advFilters.ageMax}`} onRemove={() => updateAdvFilter('ageMax', '')} />}
@@ -660,16 +716,8 @@ export default function ApproveReject() {
           )}
         </div>
 
-        {/* Data Table */}
+        {/* Data Table with Infinite Scroll */}
         <div className="bg-white border border-gray-200 shadow-sm rounded-2xl overflow-hidden relative">
-
-          {/* Refresh overlay */}
-          {isFetching && !isLoading && (
-            <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex justify-center items-start pt-10">
-              <span className="bg-white p-2 rounded-full shadow-md text-[#bd201c]"><Spinner size={24} color="#bd201c" /></span>
-            </div>
-          )}
-
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -681,7 +729,6 @@ export default function ApproveReject() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 text-sm">
-
                 {isLoading ? (
                   [...Array(5)].map((_, i) => (
                     <tr key={i} className="animate-pulse">
@@ -691,13 +738,6 @@ export default function ApproveReject() {
                       <td className="px-6 py-5 text-right"><div className="h-8 w-24 bg-gray-200 rounded-lg ml-auto" /></td>
                     </tr>
                   ))
-                ) : isError ? (
-                  <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center text-red-600">
-                      <p className="font-bold">Error loading data.</p>
-                      <button onClick={() => refetch()} className="mt-2 text-sm underline hover:text-red-800">Try Again</button>
-                    </td>
-                  </tr>
                 ) : users.length === 0 ? (
                   <tr>
                     <td colSpan={4} className="px-6 py-16 text-center text-gray-400">
@@ -707,97 +747,89 @@ export default function ApproveReject() {
                     </td>
                   </tr>
                 ) : (
-                  users.map(user => (
-                    <tr key={user.id} onClick={() => setSelected(user)} className="hover:bg-slate-50/80 transition-colors cursor-pointer group">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <Avatar name={user.name} id={user.id} size={40} muted={isDeletedView} />
-                          <div>
-                            <p className={`font-semibold text-gray-900 group-hover:text-[#bd201c] transition-colors ${isDeletedView ? 'line-through text-gray-400' : ''}`}>{user.name}</p>
-                            <p className="text-xs text-gray-400 font-mono mt-0.5">ID: {user.platformId || "—"}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className="text-gray-700">{user.email}</p>
-                        <p className="text-xs text-gray-500 mt-0.5">{user.countryCode} {user.mobile}</p>
-                      </td>
-                      <td className="px-6 py-4 text-center align-middle">
-                        <StatusBadge status={user.rawStatus} isDeleted={isDeletedView && user.isDeleted} />
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center justify-end gap-2" onClick={e => e.stopPropagation()}>
-                          {!isDeletedView && (
-                            <div className="mr-2 border-r border-gray-200 pr-4">
-                              <Toggle checked={user.rawStatus === 1} onChange={() => handleToggle(user)} loading={toggleMutation.isPending && toggleMutation.variables?.userId === user.id} />
+                  <>
+                    {users.map(user => (
+                      <tr key={user.id} onClick={() => setSelected(user)} className="hover:bg-slate-50/80 transition-colors cursor-pointer group">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <Avatar name={`${user.firstName} ${user.lastName}`} id={user.id} size={40} muted={isDeletedView} />
+                            <div>
+                              <p className={`font-semibold text-gray-900 group-hover:text-[#bd201c] transition-colors ${isDeletedView ? 'line-through text-gray-400' : ''}`}>
+                                {user.firstName} {user.lastName}
+                              </p>
+                              <p className="text-xs text-gray-400 font-mono mt-0.5">ID: {user.platformId || "—"}</p>
                             </div>
-                          )}
-                          <button onClick={() => navigate(`/admin/profile/${user.id}`)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition tooltip-btn" title="Full Profile">
-                            <Icons.Eye />
-                          </button>
-                          {isDeletedView ? (
-                            <button onClick={() => setRestoreTarget(user)} className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-xl transition" title="Restore User">
-                              <Icons.Restore />
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <p className="text-gray-700">{user.email}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">{user.countryCode} {user.mobile}</p>
+                        </td>
+                        <td className="px-6 py-4 text-center align-middle">
+                          <StatusBadge status={user.rawStatus} isDeleted={isDeletedView && user.isDeleted} />
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center justify-end gap-2" onClick={e => e.stopPropagation()}>
+                            {!isDeletedView && (
+                              <div className="mr-2 border-r border-gray-200 pr-4">
+                                <Toggle checked={user.rawStatus === 1} onChange={() => handleToggle(user)} loading={toggleMutation.isPending && toggleMutation.variables?.userId === user.id} />
+                              </div>
+                            )}
+                            <button onClick={() => navigate(`/admin/profile/${user.id}`)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition tooltip-btn" title="Full Profile">
+                              <Icons.Eye />
                             </button>
-                          ) : (
-                            <button onClick={() => setDeleteTarget(user)} className="p-2 text-red-600 hover:bg-red-50 rounded-xl transition" title="Delete User">
-                              <Icons.Trash />
-                            </button>
-                          )}
+                            {isDeletedView ? (
+                              <button onClick={() => setRestoreTarget(user)} className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-xl transition" title="Restore User">
+                                <Icons.Restore />
+                              </button>
+                            ) : (
+                              <button onClick={() => setDeleteTarget(user)} className="p-2 text-red-600 hover:bg-red-50 rounded-xl transition" title="Delete User">
+                                <Icons.Trash />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    
+                    {/* Infinite Scroll Trigger */}
+                    <tr>
+                      <td colSpan={4} className="px-6 py-4 text-center">
+                        <div ref={loadMoreRef} className="flex justify-center items-center py-2">
+                          {isFetchingMore ? (
+                            <div className="flex items-center gap-2 text-gray-400">
+                              <Spinner size={20} color={C.primary} />
+                              <span className="text-sm">Loading more users...</span>
+                            </div>
+                          ) : hasNextPage ? (
+                            <span className="text-sm text-gray-400">Scroll for more</span>
+                          ) : totalLoaded > 0 ? (
+                            <span className="text-sm text-gray-400">— End of list: {totalLoaded} users loaded —</span>
+                          ) : null}
                         </div>
                       </td>
                     </tr>
-                  ))
+                  </>
                 )}
               </tbody>
             </table>
           </div>
 
-          {/* Pagination */}
-          {pagination && (
-            <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex items-center justify-between text-sm flex-wrap gap-3">
-              <span className="text-gray-500 font-medium">
-                Showing <span className="font-bold text-gray-900">{((filters.page - 1) * filters.limit) + 1}–{Math.min(filters.page * filters.limit, pagination.total)}</span> of <span className="font-bold text-gray-900">{pagination.total}</span> users
+          {/* Stats Footer */}
+          {totalLoaded > 0 && (
+            <div className="px-6 py-3 border-t border-gray-200 bg-gray-50 text-sm text-gray-500 flex justify-between">
+              <span>
+                Showing <span className="font-bold text-gray-900">{users.length}</span> users
+                {activeFilterCount > 0 && (
+                  <span className="ml-2 text-xs text-gray-400">
+                    (filtered by {activeFilterCount} criteria)
+                  </span>
+                )}
               </span>
-              <div className="flex items-center gap-1 flex-wrap">
-                {/* Prev */}
-                <button
-                  disabled={filters.page === 1}
-                  onClick={() => updateFilter('page', filters.page - 1)}
-                  className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-40 font-medium transition text-xs"
-                >← Prev</button>
-
-                {/* Page numbers */}
-                {Array.from({ length: pagination.total_pages }, (_, i) => i + 1)
-                  .filter(p => p === 1 || p === pagination.total_pages || Math.abs(p - filters.page) <= 1)
-                  .reduce((acc, p, idx, arr) => {
-                    if (idx > 0 && p - arr[idx - 1] > 1) acc.push('...');
-                    acc.push(p);
-                    return acc;
-                  }, [])
-                  .map((p, i) =>
-                    p === '...' ? (
-                      <span key={`dots-${i}`} className="px-2 text-gray-400 text-xs">…</span>
-                    ) : (
-                      <button
-                        key={p}
-                        onClick={() => updateFilter('page', p)}
-                        className={`w-8 h-8 rounded-lg text-xs font-semibold border transition ${filters.page === p
-                          ? 'bg-[#bd201c] text-white border-[#bd201c]'
-                          : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-                          }`}
-                      >{p}</button>
-                    )
-                  )
-                }
-
-                {/* Next */}
-                <button
-                  disabled={filters.page === pagination.total_pages}
-                  onClick={() => updateFilter('page', filters.page + 1)}
-                  className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-40 font-medium transition text-xs"
-                >Next →</button>
-              </div>
+              <span>
+                {isFetchingMore && <span className="text-[#bd201c]">Loading more...</span>}
+                {!hasNextPage && users.length > 0 && <span className="text-gray-400">✓ All loaded</span>}
+              </span>
             </div>
           )}
         </div>
@@ -821,13 +853,13 @@ export default function ApproveReject() {
         />
       )}
 
-      <ResetPasswordModal isOpen={resetModalOpen} onClose={() => setResetModalOpen(false)} onConfirm={handleResetPassword} isPending={resetPending} userName={selected?.name} />
+      <ResetPasswordModal isOpen={resetModalOpen} onClose={() => setResetModalOpen(false)} onConfirm={handleResetPassword} isPending={resetPending} userName={selected?.firstName} />
 
       <ConfirmModal isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={confirmDelete} isPending={deleteMutation.isPending}
-        title="Delete User Account" message={`Are you sure you want to soft-delete "${deleteTarget?.name}"? They will lose access to their account.`} confirmLabel="Yes, Delete" accentColor={C.danger} />
+        title="Delete User Account" message={`Are you sure you want to soft-delete "${deleteTarget?.firstName} ${deleteTarget?.lastName}"? They will lose access to their account.`} confirmLabel="Yes, Delete" accentColor={C.danger} />
 
       <ConfirmModal isOpen={!!restoreTarget} onClose={() => setRestoreTarget(null)} onConfirm={confirmRestore} isPending={restoreMutation.isPending}
-        title="Restore User Account" message={`"${restoreTarget?.name}" will be restored and regain full access.`} confirmLabel="Yes, Restore" accentColor={C.active} />
+        title="Restore User Account" message={`"${restoreTarget?.firstName} ${restoreTarget?.lastName}" will be restored and regain full access.`} confirmLabel="Yes, Restore" accentColor={C.active} />
     </div>
   );
 }

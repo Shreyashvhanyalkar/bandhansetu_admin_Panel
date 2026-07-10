@@ -207,18 +207,95 @@ export default function ProfileDetails() {
 
     const getImageUrl = (fileName) => `${IMAGE_DOWNLOAD_URL}${fileName}`;
 
-    const ud = profileData?.userDetails || {};
-    const primary = profileData?.userPrimaryDetails || {};
-    const religion = profileData?.userReligionDetails || {};
-    const education = profileData?.userEducationalDetails || {};
-    const work = profileData?.userWorkingDetails || {};
-    const lifestyle = profileData?.userLifeStyleDetails || {};
-    const aboutMe = profileData?.userAboutMeDetails || {};
-    const address = profileData?.userAddressDetails || {};
-    const family = profileData?.userFamilyDetails || {};
+    const udRaw = profileData?.userDetails || {};
+    const primaryRaw = profileData?.userPrimaryDetails || {};
+    const religionRaw = profileData?.userReligionDetails || {};
+    const educationRaw = profileData?.userEducationalDetails || {};
+    const workRaw = profileData?.userWorkingDetails || {};
+    const lifestyleRaw = profileData?.userLifeStyleDetails || {};
+    const aboutMeRaw = profileData?.userAboutMeDetails || {};
+    const addressRaw = profileData?.userAddressDetails || {};
+    const familyRaw = profileData?.userFamilyDetails || {};
 
-    const firstName = ud.firstName || ud.first_name || "";
-    const lastName = ud.lastName || ud.last_name || "";
+    const ud = {
+        firstName: udRaw.firstName || udRaw.first_name,
+        lastName: udRaw.lastName || udRaw.last_name,
+        platformId: udRaw.platformId || udRaw.platform_id,
+        mobileNumber: udRaw.mobileNumber || udRaw.mobile_number,
+        countryCode: udRaw.countryCode || udRaw.country_code || "+91",
+        email: udRaw.email,
+        age: udRaw.age,
+        dateOfBirth: udRaw.dateOfBirth || udRaw.date_of_birth,
+        gender: udRaw.gender,
+        profileCreatedBy: udRaw.profileCreatedBy || udRaw.profile_created_by,
+        profilePicture: udRaw.profilePicture || udRaw.profile_picture,
+    };
+
+    const primary = {
+        maritalStatus: primaryRaw.maritalStatus || primaryRaw.marital_status,
+        mothertongueName: primaryRaw.mothertongueName || primaryRaw.mothertongue_name,
+        childStatus: primaryRaw.childStatus || primaryRaw.child_status,
+        numberOfChildrens: primaryRaw.numberOfChildrens ?? primaryRaw.number_of_childrens,
+        cityName: primaryRaw.cityName || primaryRaw.city_name,
+        stateName: primaryRaw.stateName || primaryRaw.state_name,
+        countryName: primaryRaw.countryName || primaryRaw.country_name,
+    };
+
+    const religion = {
+        religionName: religionRaw.religionName || religionRaw.religion_name,
+        castName: religionRaw.castName || religionRaw.cast_name,
+        subcastName: religionRaw.subcastName || religionRaw.subcast_name,
+    };
+
+    const education = {
+        educationLevelName: educationRaw.educationLevelName || educationRaw.education_level_name,
+        educationFieldName: educationRaw.educationFieldName || educationRaw.education_field_name,
+        collegeName: educationRaw.collegeName || educationRaw.college_name,
+    };
+
+    const work = {
+        employerName: workRaw.employerName || workRaw.employer_name,
+        categoryName: workRaw.categoryName || workRaw.category_name,
+        subcategoryName: workRaw.subcategoryName || workRaw.subcategory_name,
+        workingWithName: workRaw.workingWithName || workRaw.working_with_name,
+        annualIncomeName: workRaw.annualIncomeName || workRaw.annual_income_name,
+        currencyType: workRaw.currencyType || workRaw.currency_type || "INR",
+    };
+
+    const lifestyle = {
+        diet: lifestyleRaw.diet,
+        smoke: lifestyleRaw.smoke,
+        drink: lifestyleRaw.drink,
+        heightFeet: lifestyleRaw.heightFeet ?? lifestyleRaw.height_feet,
+        heightInches: lifestyleRaw.heightInches ?? lifestyleRaw.height_inches,
+        bodyType: lifestyleRaw.bodyType || lifestyleRaw.body_type,
+        skinTone: lifestyleRaw.skinTone || lifestyleRaw.skin_tone,
+    };
+
+    const aboutMe = {
+        aboutMe: aboutMeRaw.aboutMe || aboutMeRaw.about_me,
+        anyDisability: aboutMeRaw.anyDisability ?? aboutMeRaw.any_disability,
+    };
+
+    const address = {
+        addressLine1: addressRaw.addressLine1 || addressRaw.address_line1,
+        addressLine2: addressRaw.addressLine2 || addressRaw.address_line2,
+        pincode: addressRaw.pincode,
+    };
+
+    const family = {
+        fatherStatusCategory: familyRaw.fatherStatusCategory || familyRaw.father_status_category,
+        motherStatusCategory: familyRaw.motherStatusCategory || familyRaw.mother_status_category,
+        numberOfBrothers: familyRaw.numberOfBrothers ?? familyRaw.number_of_brothers,
+        numberOfMarriedBrothers: familyRaw.numberOfMarriedBrothers ?? familyRaw.number_of_married_brothers,
+        numberOfSisters: familyRaw.numberOfSisters ?? familyRaw.number_of_sisters,
+        numberOfMarriedSisters: familyRaw.numberOfMarriedSisters ?? familyRaw.number_of_married_sisters,
+        familyAffluenceCategory: familyRaw.familyAffluenceCategory || familyRaw.family_affluence_category,
+        placeOfFamily: familyRaw.placeOfFamily || familyRaw.place_of_family,
+    };
+
+    const firstName = ud.firstName || "";
+    const lastName = ud.lastName || "";
     const fullName = [firstName, lastName].filter(Boolean).join(" ") || "—";
     const initials = fullName.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase() || "?";
 
@@ -347,6 +424,7 @@ export default function ProfileDetails() {
                                         return (
                                             <div
                                                 key={fName || i}
+                                                data-testid="gallery-item"
                                                 onClick={() => setLightboxFileName(fName)}
                                                 style={{
                                                     width: 70, height: 70,

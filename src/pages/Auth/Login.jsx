@@ -58,7 +58,7 @@ export default function Login() {
                   name="email"
                   value={form.email}
                   onChange={handleChange}
-                  placeholder="admin@test.com"
+                  placeholder="admin@bandhansetu.com"
                   required
                   disabled={loginMutation.isPending}
                   className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-800 bg-gray-50 outline-none transition-all duration-150 focus:bg-white focus:border-red-500 disabled:opacity-50"
@@ -75,7 +75,7 @@ export default function Login() {
                     name="password"
                     value={form.password}
                     onChange={handleChange}
-                    placeholder="it@123"
+                    placeholder="Admin@123"
                     required
                     disabled={loginMutation.isPending}
                     className="w-full border border-gray-200 rounded-lg px-4 py-2.5 pr-11 text-sm text-gray-800 bg-gray-50 outline-none transition-all duration-150 focus:bg-white focus:border-red-500 disabled:opacity-50"
@@ -125,15 +125,10 @@ export default function Login() {
               </button>
             </form>
 
-            <p className="text-center text-sm text-gray-400 mt-5">
-              Don't have an account?{" "}
-              <Link to="/register" className="font-semibold hover:underline transition-colors" style={{ color: "#8B0000" }}>
-                Register
-              </Link>
-            </p>
+
 
             <div className="mt-4 bg-amber-50 border border-amber-100 rounded-lg px-4 py-3 text-center">
-              
+
             </div>
           </div>
         </div>

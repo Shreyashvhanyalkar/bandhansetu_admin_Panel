@@ -38,7 +38,7 @@ const NAV_ITEMS = [
     children: [
       { label: "User Management", to: "/admin/requests" },
       { label: "Location Management", to: "/admin/locations" },
-      
+
       {
         label: "Religion & Community",
         to: "/admin/religion",
@@ -53,6 +53,15 @@ const NAV_ITEMS = [
     icon: (
       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+      </svg>
+    ),
+  },
+  {
+    label: "Plans",
+    to: "/admin/plans",
+    icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m-6 4h6m-6 4h4M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z" />
       </svg>
     ),
   },
@@ -80,7 +89,7 @@ const NAV_ITEMS = [
     ),
     children: [
       { label: "Send Notification", to: "/admin/notifications/send" },
-      
+
     ],
   },
   {
@@ -149,10 +158,9 @@ function NavGroup({ item, onClose, isMobile, depth = 0 }) {
         to={item.to}
         onClick={() => isMobile && onClose?.()}
         className={({ isActive }) =>
-          `flex items-center gap-2 ${getPaddingClass()} py-2 rounded-lg text-sm font-medium transition-all duration-200 my-0.5 ${
-            isActive && depth === 0
-              ? "shadow-sm border-l-2"
-              : isActive && depth > 0
+          `flex items-center gap-2 ${getPaddingClass()} py-2 rounded-lg text-sm font-medium transition-all duration-200 my-0.5 ${isActive && depth === 0
+            ? "shadow-sm border-l-2"
+            : isActive && depth > 0
               ? "font-semibold"
               : "text-gray-600 hover:bg-gray-100/50"
           }`
@@ -262,7 +270,7 @@ function SidebarContent({ onClose, isMobile }) {
 
       {/* User Profile & Logout */}
       <div className="px-3 py-4 border-t border-gray-100 mt-2">
-        <div className="flex items-center gap-3 px-3 py-3 rounded-xl mb-3" style={{ backgroundColor: theme.primaryLight }}>
+        {/* <div className="flex items-center gap-3 px-3 py-3 rounded-xl mb-3" style={{ backgroundColor: theme.primaryLight }}>
           <div className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md" style={{ background: `linear-gradient(135deg, ${theme.primaryDark}, ${theme.primary})` }}>
             {user?.name?.[0]?.toUpperCase() || "A"}
           </div>
@@ -271,7 +279,7 @@ function SidebarContent({ onClose, isMobile }) {
             <p className="text-xs truncate" style={{ color: theme.primary }}>{user?.email || "admin@bandhan.com"}</p>
           </div>
           <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-sm shadow-emerald-200 animate-pulse" />
-        </div>
+        </div> */}
         <button
           onClick={() => { logoutMutation.mutate(null, { onSettled: () => navigate("/login") }); }}
           disabled={logoutMutation.isPending}

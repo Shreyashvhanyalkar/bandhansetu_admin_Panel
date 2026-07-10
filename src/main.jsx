@@ -33,7 +33,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
-        <App />
+        <App/>
         {/* React Query DevTools - only shows in development */}
         <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-right" />
       </QueryClientProvider>

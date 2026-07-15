@@ -556,6 +556,7 @@ export default function ApproveReject() {
       <div className="max-w-[1400px] mx-auto space-y-6">
 
         {/* Header */}
+        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">User Management</h1>
@@ -566,6 +567,21 @@ export default function ApproveReject() {
             </p>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
+            {/* ← ADD THIS BUTTON HERE, before the isDeletedView block */}
+            <button
+              onClick={() => navigate("/admin/register")}
+              className="px-8 py-3.5 rounded-xl text-sm font-bold text-white shadow-sm transition flex items-center gap-2 whitespace-nowrap hover:opacity-90"
+              style={{ background: C.primary }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <circle cx="9" cy="7" r="4" />
+                <path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2" strokeLinecap="round" strokeLinejoin="round" />
+                <line x1="19" y1="8" x2="19" y2="14" strokeLinecap="round" />
+                <line x1="16" y1="11" x2="22" y2="11" strokeLinecap="round" />
+              </svg>
+              Register User
+            </button>
+
             {isDeletedView && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 shadow-sm">
                 <span>⚠️ Soft-Deleted View Active</span>

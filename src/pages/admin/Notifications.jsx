@@ -77,8 +77,12 @@ function Toast({ toast, onClose }) {
 }
 
 // ─── User Select Component with Infinite Scroll ─────────────────────────────
-function UserSelect({ selected, onChange, error }) {
-  const [open, setOpen] = useState(false);
+function UserSelect({ selected, onChange, error, onOpenChange }) {
+  const [open, setOpenState] = useState(false);
+  const setOpen = (value) => {
+    setOpenState(value);
+    if (onOpenChange) onOpenChange(value);
+  };
   const [search, setSearch] = useState("");
   const ref = useRef(null);
   const scrollContainerRef = useRef(null);
@@ -111,7 +115,7 @@ const allUsers = useMemo(
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [open]);
 
   useEffect(() => {
     if (inView && hasNextPage && !isFetchingNextPage) {
@@ -178,7 +182,7 @@ const allUsers = useMemo(
       </div>
 
       {open && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-64 overflow-hidden">
+        <div className="relative left-0 right-0 mt-1.5 bg-white border border-gray-100 rounded-xl shadow-xl ring-1 ring-black/5 z-40 max-h-64 overflow-hidden">
           <div className="p-1.5 border-b border-gray-100 bg-gray-50/50 sticky top-0 z-10">
             <input
               type="text"
@@ -216,16 +220,18 @@ const allUsers = useMemo(
                     <div
                       key={user.id}
                       onClick={() => toggleUser(user.id)}
-                      className={`flex items-center gap-2.5 p-2 cursor-pointer transition-colors ${
+                      className={`group flex items-center gap-2.5 p-2 cursor-pointer transition-colors ${
                         isSelected ? "bg-[#fef2f2]" : "hover:bg-gray-50"
                       }`}
                     >
-                      <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
-                        isSelected ? "bg-[#bd201c] border-[#bd201c]" : "border-gray-300"
+                      <div className={`w-[18px] h-[18px] rounded-md border-2 flex items-center justify-center shrink-0 transition-all duration-150 ${
+                        isSelected
+                          ? "bg-[#bd201c] border-[#bd201c] shadow-sm"
+                          : "border-gray-300 bg-white group-hover:border-gray-400"
                       }`}>
                         {isSelected && (
-                          <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3.5} d="M5 13l4 4L19 7" />
+                          <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                           </svg>
                         )}
                       </div>
@@ -648,6 +654,7 @@ export default function NotificationManagement() {
   const [bannerImage, setBannerImage] = useState(null);
   const [errors, setErrors] = useState({});
   const [toast, setToast] = useState(null);
+  const [isRecipientDropdownOpen, setIsRecipientDropdownOpen] = useState(false);
 
   const { data: religionsData, isLoading: religionsLoading } = useReligions();
   const { data: countries = [], isLoading: countriesLoading } = useGetCountries();
@@ -1032,6 +1039,7 @@ export default function NotificationManagement() {
                     selected={targetUserIds}
                     onChange={setTargetUserIds}
                     error={errors.targetUsers}
+                    onOpenChange={setIsRecipientDropdownOpen}
                   />
                   {errors.targetUsers && <p className="text-xs text-red-600 mt-1">{errors.targetUsers}</p>}
                 </div>

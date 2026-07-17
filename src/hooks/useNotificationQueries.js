@@ -22,7 +22,6 @@ export const useAllUsersInfinite = (searchTerm = "", limit = 20) => {
       if (searchTerm?.trim()) params.set("search", searchTerm.trim());
 
       const url = `${BASE_URL}/api/auth/admin/users?${params.toString()}`;
-      console.log(`Fetching users for select - offset: ${pageParam}, limit: ${limit}, search: "${searchTerm}"`);
 
       const response = await fetch(url, {
         headers: getAuthHeaders(),
@@ -34,9 +33,7 @@ export const useAllUsersInfinite = (searchTerm = "", limit = 20) => {
       }
 
       const data = await response.json();
-      console.log("Select users response:", data);
 
-      // Handle array response (no pagination metadata)
       let usersData = [];
       
       if (Array.isArray(data)) {
@@ -51,7 +48,6 @@ export const useAllUsersInfinite = (searchTerm = "", limit = 20) => {
         usersData = [];
       }
 
-      // Map users to consistent format
       const users = usersData.map((u) => ({
         id: u.id || u.userId,
         platformId: u.platform_id || u.platformId || "",
@@ -71,7 +67,6 @@ export const useAllUsersInfinite = (searchTerm = "", limit = 20) => {
         createdAt: u.created_at || u.createdAt,
       }));
 
-      // Determine if there are more users
       const hasMore = usersData.length === limit;
       const nextOffset = hasMore ? pageParam + limit : undefined;
 
@@ -90,6 +85,8 @@ export const useAllUsersInfinite = (searchTerm = "", limit = 20) => {
     initialPageParam: 0,
     staleTime: 2 * 60 * 1000,
     refetchOnWindowFocus: false,
+    refetchOnMount: false, // ✅ PREVENTS AUTO-REFETCH ON MOUNT
+    enabled: false, // ✅ PREVENTS AUTO-FETCH - we control when to fetch
   });
 };
 
@@ -145,7 +142,6 @@ export const useSendNotification = () => {
   
   return useMutation({
     mutationFn: async (notificationData) => {
-      console.log("Sending notification with data:", notificationData);
       
       const response = await fetch(`${BASE_URL}/api/auth/admin/notifications/send`, {
         method: "POST",
@@ -154,8 +150,7 @@ export const useSendNotification = () => {
       });
       
       const responseText = await response.text();
-      console.log("Response status:", response.status);
-      console.log("Response text:", responseText);
+      
       
       let data;
       try {
@@ -182,7 +177,6 @@ export const useSendNotification = () => {
 export const useUploadBanner = () => {
   return useMutation({
     mutationFn: async (file) => {
-      console.log("Uploading banner file:", file.name);
       const formData = new FormData();
       formData.append("image", file);
 
@@ -197,8 +191,7 @@ export const useUploadBanner = () => {
       });
 
       const responseText = await response.text();
-      console.log("Upload response status:", response.status);
-      console.log("Upload response text:", responseText);
+     
 
       let data;
       try {

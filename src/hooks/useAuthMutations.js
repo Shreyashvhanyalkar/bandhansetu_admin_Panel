@@ -58,7 +58,6 @@ export const useLogin = () => {
 
       const data = await response.json();
 
-      console.log("Login API raw response:", JSON.stringify(data, null, 2));
 
       if (!response.ok) {
         throw new Error(data.message || "Invalid email or password.");

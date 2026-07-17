@@ -36,7 +36,6 @@ const fetchReligions = async () => {
   });
   const json = await handleResponse(res);
   
-  console.log("Religions API response:", json);
   
   // Handle different response structures
   if (json.religions && Array.isArray(json.religions)) {
@@ -125,7 +124,6 @@ const fetchCastesByReligion = async (religionId) => {
   });
   const json = await handleResponse(res);
   
-  console.log(`Castes for religion ${religionId}:`, json);
   
   // Handle different response structures
   if (json.castes && Array.isArray(json.castes)) {
@@ -217,7 +215,6 @@ const fetchSubcastsByCaste = async (casteId) => {
   });
   const json = await handleResponse(res);
   
-  console.log(`Subcasts for caste ${casteId}:`, json);
   
   // Handle different response structures
   if (json.subcasts && Array.isArray(json.subcasts)) {

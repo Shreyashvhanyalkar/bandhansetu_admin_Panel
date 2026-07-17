@@ -481,11 +481,13 @@ export default function ProfileDetails() {
                                 ]} />
 
                                 <Section title="Primary Details" rows={[
-                                    ["Marital Status", primary.maritalStatus],
-                                    ["Mother Tongue", primary.mothertongueName],
-                                    ["Children", primary.childStatus === "Yes" ? `Yes (${primary.numberOfChildrens})` : primary.childStatus],
-                                    ["Location", [primary.cityName, primary.stateName, primary.countryName].filter(Boolean).join(", ")],
-                                ]} />
+    ["Marital Status", primary.maritalStatus],
+    ["Mother Tongue", primary.mothertongueName],
+    ["Children", primary.childStatus === "Yes" ? `Yes (${primary.numberOfChildrens})` : primary.childStatus],
+    ["City", primary.cityName || "N/A"],
+    ["State", primary.stateName || "N/A"],
+    ["Country", primary.countryName || "N/A"],
+]} />
 
                                 <Section title="Education" rows={[
                                     ["Level", education.educationLevelName],

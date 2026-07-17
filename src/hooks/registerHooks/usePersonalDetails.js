@@ -109,7 +109,6 @@ export const useSkinTones = () =>
 export const useSavePersonalDetails = () =>
   useMutation({
     mutationFn: async (payload) => {
-      console.log("💾 Saving personal details:", payload);
       
       const res = await fetch(`${BASE_URL}/api/auth/admin/users/personal-details`, {
         method: "POST",
@@ -124,7 +123,6 @@ export const useSavePersonalDetails = () =>
         throw new Error("Invalid JSON response from server");
       }
 
-      console.log("📦 Save response:", data);
 
       if (!res.ok) {
         throw new Error(data.message || "Failed to save personal details");
@@ -136,6 +134,5 @@ export const useSavePersonalDetails = () =>
       console.error("❌ Save mutation error:", error);
     },
     onSuccess: (data) => {
-      console.log("✅ Save mutation success:", data);
     },
   });

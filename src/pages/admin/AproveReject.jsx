@@ -49,7 +49,7 @@ const Icons = {
   Restore: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4v5h5M20 20v-5h-5" strokeLinecap="round" strokeLinejoin="round" /><path d="M4 9a8 8 0 0114.93-3.5M20 15a8 8 0 01-14.93 3.5" strokeLinecap="round" strokeLinejoin="round" /></svg>,
   Close: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" /></svg>,
   Key: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="5" y="11" width="14" height="11" rx="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>,
-  Download: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+  Download: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
 };
 
 // ─── Components ───────────────────────────────────────────────────────────────
@@ -317,19 +317,19 @@ function Chip({ label, onRemove }) {
 // ─── Main View ────────────────────────────────────────────────────────────────
 export default function ApproveReject() {
   const navigate = useNavigate();
-  const [filters, setFilters] = useState({ 
+  const [filters, setFilters] = useState({
     offset: 0,
-    limit: 25, 
-    search: "", 
-    status: 1, 
-    deleted: undefined 
+    limit: 25,
+    search: "",
+    status: 1,
+    deleted: undefined
   });
-  const [advFilters, setAdvFilters] = useState({ 
-    gender: "", 
-    ageMin: "", 
-    ageMax: "", 
-    city: "", 
-    state: "" 
+  const [advFilters, setAdvFilters] = useState({
+    gender: "",
+    ageMin: "",
+    ageMax: "",
+    city: "",
+    state: ""
   });
   const [searchInput, setSearchInput] = useState("");
   const [showFilters, setShowFilters] = useState(false);
@@ -407,10 +407,10 @@ export default function ApproveReject() {
   };
 
   const updateFilter = useCallback((k, v) => {
-    setFilters(f => ({ 
-      ...f, 
-      [k]: v, 
-      ...(k !== 'offset' ? { offset: 0 } : {}) 
+    setFilters(f => ({
+      ...f,
+      [k]: v,
+      ...(k !== 'offset' ? { offset: 0 } : {})
     }));
     setSelected(null);
   }, []);
@@ -582,12 +582,7 @@ export default function ApproveReject() {
               Register User
             </button>
 
-            {isDeletedView && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 shadow-sm">
-                <span>⚠️ Soft-Deleted View Active</span>
-                <button onClick={() => updateFilter('deleted', undefined)} className="underline hover:text-red-900 ml-2">Exit</button>
-              </div>
-            )}
+           
           </div>
         </div>
 
@@ -664,7 +659,7 @@ export default function ApproveReject() {
                     <option value="Other">Other</option>
                   </select>
                 </div>
-                
+
                 {/* Min Age - Client-side (backend may not support) */}
                 {/* <div className="space-y-1">
                   <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Min Age</label>
@@ -717,7 +712,7 @@ export default function ApproveReject() {
               {activeFilterCount > 0 && (
                 <div className="mt-3 flex items-center gap-2 flex-wrap">
                   <span className="text-xs text-gray-500 font-medium">
-                    {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''} active · 
+                    {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''} active ·
                     <span className="font-bold text-gray-900 ml-1">{users.length}</span> users found
                   </span>
                   {advFilters.gender && <Chip label={`Gender: ${advFilters.gender}`} onRemove={() => updateAdvFilter('gender', '')} />}
@@ -791,9 +786,12 @@ export default function ApproveReject() {
                                 <Toggle checked={user.rawStatus === 1} onChange={() => handleToggle(user)} loading={toggleMutation.isPending && toggleMutation.variables?.userId === user.id} />
                               </div>
                             )}
-                            <button onClick={() => navigate(`/admin/profile/${user.id}`)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition tooltip-btn" title="Full Profile">
-                              <Icons.Eye />
-                            </button>
+                            {/* ✅ Only show eye button if NOT in deleted view */}
+                            {!isDeletedView && (
+                              <button onClick={() => navigate(`/admin/profile/${user.id}`)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition tooltip-btn" title="Full Profile">
+                                <Icons.Eye />
+                              </button>
+                            )}
                             {isDeletedView ? (
                               <button onClick={() => setRestoreTarget(user)} className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-xl transition" title="Restore User">
                                 <Icons.Restore />
@@ -807,7 +805,7 @@ export default function ApproveReject() {
                         </td>
                       </tr>
                     ))}
-                    
+
                     {/* Infinite Scroll Trigger */}
                     <tr>
                       <td colSpan={4} className="px-6 py-4 text-center">

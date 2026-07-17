@@ -1,5 +1,5 @@
 // src/pages/admin/register/PartenerPreference.jsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   useMaritalStatuses,
@@ -17,6 +17,41 @@ import {
   useWorkingSubcategories,
   useSavePartnerPreferences,
 } from "../../../hooks/registerHooks/usePartenerDetails";
+
+// Toast Component
+function Toast({ toast, onClose }) {
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(onClose, 5000);
+    return () => clearTimeout(timer);
+  }, [toast, onClose]);
+
+  if (!toast) return null;
+
+  return (
+    <div className="fixed top-20 right-4 z-50 animate-slide-in">
+      <div className={`rounded-lg shadow-lg p-4 min-w-[300px] max-w-md ${
+        toast.type === "success" ? "bg-green-50 border-l-4 border-green-500" : "bg-red-50 border-l-4 border-red-500"
+      }`}>
+        <div className="flex items-start gap-3">
+          <div className="flex-1">
+            <p className={`font-semibold ${toast.type === "success" ? "text-green-800" : "text-red-800"}`}>
+              {toast.title}
+            </p>
+            {toast.message && (
+              <p className="text-sm mt-1 text-gray-600">{toast.message}</p>
+            )}
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ------------------------------------------------------------------
 // Dual-handle range slider (age / height)
@@ -102,6 +137,11 @@ export default function PartenerPreference() {
   const personalDetails = location.state?.personalDetails || null;
   const userId = registerData?.userId;
 
+  // Refs for scroll preservation
+  const formRef = useRef(null);
+  const scrollContainerRef = useRef(null);
+  const scrollPositionRef = useRef(0);
+
   // Check if user data exists
   useEffect(() => {
     if (!registerData || !userId) {
@@ -145,6 +185,7 @@ export default function PartenerPreference() {
   });
   const [errors, setErrors] = useState({});
   const [isSaving, setIsSaving] = useState(false);
+  const [toast, setToast] = useState(null);
 
   // ✅ MASTER DATA QUERIES
   const maritalStatusesQuery = useMaritalStatuses();
@@ -166,7 +207,12 @@ export default function PartenerPreference() {
   // ✅ SAVE MUTATION
   const savePartnerPreferencesMutation = useSavePartnerPreferences();
 
-  const update = (key, idValue, labelValue) => {
+  const update = useCallback((key, idValue, labelValue) => {
+    // Save scroll position before state update
+    if (scrollContainerRef.current) {
+      scrollPositionRef.current = scrollContainerRef.current.scrollTop;
+    }
+
     setForm((prev) => {
       const next = { ...prev, [key]: idValue, [`${key.replace("Id", "Label")}`]: labelValue };
       
@@ -209,22 +255,21 @@ export default function PartenerPreference() {
       return next;
     });
     setErrors((p) => ({ ...p, [key.replace("Id", "")]: "" }));
-  };
+
+    // Restore scroll position after state update
+    requestAnimationFrame(() => {
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTop = scrollPositionRef.current;
+      }
+    });
+  }, []);
 
   const validate = () => {
     const e = {};
-    if (!form.maritalStatusId) e.maritalStatus = "Please select marital status";
-    if (!form.religionId) e.religion = "Please select religion";
-    if (!form.casteId) e.caste = "Please select caste";
-    if (!form.motherTongueId) e.motherTongue = "Please select mother tongue";
-    if (!form.countryId) e.country = "Please select country";
-    if (!form.stateId) e.state = "Please select state";
-    if (!form.cityId) e.city = "Please select city";
-    if (!form.educationLevelId) e.educationLevel = "Please select education level";
-    if (!form.educationFieldId) e.educationField = "Please select education field";
-    if (!form.workingWithId) e.workingWith = "Please select working with";
-    if (!form.workingCategoryId) e.workingCategory = "Please select category";
-    if (!form.subCategoryId) e.subCategory = "Please select sub-category";
+    
+    // ❌ REMOVED: All select field validations (now optional)
+    // Only age and height are required (they have default values)
+    
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -243,32 +288,88 @@ export default function PartenerPreference() {
       heightFromInches: heightMin % 12,
       heightToFeet: Math.floor(heightMax / 12),
       heightToInches: heightMax % 12,
-      maritalStatus: [form.maritalStatusLabel],
-      religionName: [form.religionLabel],
-      castName: [form.casteLabel],
-      subcastName: form.subcasteLabel ? [form.subcasteLabel] : [],
-      mothertongueName: [form.motherTongueLabel],
-      countryName: [form.countryLabel],
-      stateName: [form.stateLabel],
-      cityName: [form.cityLabel],
-      educationLevelName: [form.educationLevelLabel],
-      educationFieldName: [form.educationFieldLabel],
-      workingWithName: [form.workingWithLabel],
-      workingWithCategoryName: [form.workingCategoryLabel],
-      subcategoryName: [form.subCategoryLabel],
     };
 
-    console.log("📤 Sending partner preferences payload:", payload);
+    // ✅ Only add optional fields if they have values
+    if (form.maritalStatusId && form.maritalStatusLabel) {
+      payload.maritalStatus = [form.maritalStatusLabel];
+    }
+
+    if (form.religionId && form.religionLabel) {
+      payload.religionName = [form.religionLabel];
+    }
+
+    if (form.casteId && form.casteLabel) {
+      payload.castName = [form.casteLabel];
+    }
+
+    if (form.subcasteId && form.subcasteLabel) {
+      payload.subcastName = [form.subcasteLabel];
+    }
+
+    if (form.motherTongueId && form.motherTongueLabel) {
+      payload.mothertongueName = [form.motherTongueLabel];
+    }
+
+    if (form.countryId && form.countryLabel) {
+      payload.countryName = [form.countryLabel];
+    }
+
+    if (form.stateId && form.stateLabel) {
+      payload.stateName = [form.stateLabel];
+    }
+
+    if (form.cityId && form.cityLabel) {
+      payload.cityName = [form.cityLabel];
+    }
+
+    if (form.educationLevelId && form.educationLevelLabel) {
+      payload.educationLevelName = [form.educationLevelLabel];
+    }
+
+    if (form.educationFieldId && form.educationFieldLabel) {
+      payload.educationFieldName = [form.educationFieldLabel];
+    }
+
+    if (form.workingWithId && form.workingWithLabel) {
+      payload.workingWithName = [form.workingWithLabel];
+    }
+
+    if (form.workingCategoryId && form.workingCategoryLabel) {
+      payload.workingWithCategoryName = [form.workingCategoryLabel];
+    }
+
+    if (form.subCategoryId && form.subCategoryLabel) {
+      payload.subcategoryName = [form.subCategoryLabel];
+    }
 
     savePartnerPreferencesMutation.mutate(payload, {
       onSuccess: (data) => {
-        console.log("✅ Partner preferences saved:", data);
         setIsSaving(false);
-        navigate("/admin/requests");
+        
+        // Show success toast
+        setToast({
+          type: "success",
+          title: "Success!",
+          message: "Partner preferences saved successfully!",
+        });
+
+        // Navigate after a short delay to show the toast
+        setTimeout(() => {
+          navigate("/admin/requests");
+        }, 1000);
       },
       onError: (error) => {
         console.error("❌ Save failed:", error);
         setIsSaving(false);
+        
+        // Show error toast
+        setToast({
+          type: "error",
+          title: "Error!",
+          message: error.message || "Failed to save partner preferences",
+        });
+        
         setErrors({ submit: error.message || "Failed to save partner preferences" });
       },
     });
@@ -394,13 +495,17 @@ export default function PartenerPreference() {
     fontFamily: "Rubik, sans-serif",
   };
 
-  const SelectField = ({ label, name, value, data, placeholder, disabled, isLoading }) => {
+  const SelectField = ({ label, name, value, data, placeholder, disabled, isLoading, required = false }) => {
     const fieldError = errors[name.replace("Id", "")];
     const hasError = !!fieldError;
+    const isPlaceholder = !value;
     
     return (
-      <div style={{ marginBottom: 20 }}>
-        <label style={labelStyle}>{label}</label>
+      <div style={{ marginBottom: 20 }} id={`field-${name}`}>
+        <label style={labelStyle}>
+          {label}
+          {required && <span style={{ color: "#dc2626", marginLeft: 4 }}>*</span>}
+        </label>
         <select
           value={value || ""}
           onChange={(e) => {
@@ -412,13 +517,14 @@ export default function PartenerPreference() {
             ...selectStyle(hasError),
             opacity: disabled || isLoading ? 0.6 : 1,
             cursor: disabled || isLoading ? "not-allowed" : "pointer",
+            color: isPlaceholder ? "#999" : "#333",
           }}
         >
-          <option value="">
+          <option value="" style={{ color: "#999", fontWeight: 400 }}>
             {isLoading ? "Loading..." : placeholder}
           </option>
           {data?.map((item) => (
-            <option key={item.id} value={item.id}>
+            <option key={item.id} value={item.id} style={{ color: "#333", fontWeight: 400 }}>
               {item.label}
             </option>
           ))}
@@ -434,26 +540,37 @@ export default function PartenerPreference() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#fbfbfb] px-0 sm:px-4 font-[Rubik,sans-serif]">
-      <div className="w-full sm:max-w-md min-h-screen sm:min-h-[85vh] sm:h-auto sm:rounded-2xl sm:shadow-2xl sm:my-8 flex flex-col relative overflow-hidden bg-white">
+      <Toast toast={toast} onClose={() => setToast(null)} />
+      
+      <div 
+        className="w-full sm:max-w-md min-h-screen sm:min-h-[85vh] sm:h-auto sm:rounded-2xl sm:shadow-2xl sm:my-8 flex flex-col relative overflow-hidden bg-white"
+        ref={formRef}
+      >
         {/* Header */}
         <div style={{ padding: "28px 24px 16px" }}>
           <h1 style={{ fontSize: 22, fontWeight: 800, color: "#601000", margin: 0, fontFamily: "Rubik, sans-serif" }}>
             Partner Preference
           </h1>
-          {userId && (
-            <p style={{ fontSize: 12, color: "#999", marginTop: 4 }}>
-              User ID: {userId}
-            </p>
-          )}
+          
         </div>
         <div style={{ borderBottom: "1px solid #eee" }} />
 
         {/* Form */}
-        <div style={{ flex: 1, padding: "20px 24px 32px", overflowY: "auto" }}>
+        <div 
+          ref={scrollContainerRef}
+          style={{ 
+            flex: 1, 
+            padding: "20px 24px 32px", 
+            overflowY: "auto",
+            maxHeight: "calc(100vh - 200px)",
+          }}
+        >
           <form onSubmit={handleSave}>
-            {/* Preferred Age Range */}
-            <div style={{ marginBottom: 24 }}>
-              <label style={labelStyle}>Preferred age range</label>
+            {/* Preferred Age Range - REQUIRED */}
+            <div style={{ marginBottom: 24 }} id="field-age">
+              <label style={labelStyle}>
+                Preferred age range <span style={{ color: "#dc2626", marginLeft: 4 }}>*</span>
+              </label>
               <DualRangeSlider
                 min={18}
                 max={60}
@@ -467,133 +584,149 @@ export default function PartenerPreference() {
               />
             </div>
 
+            {/* ALL SELECT FIELDS ARE NOW OPTIONAL */}
             <SelectField
-              label="Marital Status"
+              label="Marital Status (Optional)"
               name="maritalStatusId"
               value={form.maritalStatusId}
               data={maritalStatusesQuery.data}
-              placeholder="Marital Status"
+              placeholder="Marital Status (optional)"
               isLoading={maritalStatusesQuery.isLoading}
+              required={false}
             />
 
             <SelectField
-              label="Preferred Religion"
+              label="Preferred Religion (Optional)"
               name="religionId"
               value={form.religionId}
               data={religionsQuery.data}
-              placeholder="Religion"
+              placeholder="Religion (optional)"
               isLoading={religionsQuery.isLoading}
+              required={false}
             />
 
             <SelectField
-              label="Preferred Caste"
+              label="Preferred Caste (Optional)"
               name="casteId"
               value={form.casteId}
               data={castesQuery.data}
-              placeholder="Caste"
+              placeholder="Caste (optional)"
               disabled={!form.religionId}
               isLoading={castesQuery.isLoading}
+              required={false}
             />
 
             <SelectField
-              label="Preferred Subcaste"
+              label="Preferred Subcaste (Optional)"
               name="subcasteId"
               value={form.subcasteId}
               data={subcastesQuery.data}
-              placeholder="Subcaste"
+              placeholder="Subcaste (optional)"
               disabled={!form.casteId}
               isLoading={subcastesQuery.isLoading}
+              required={false}
             />
 
             <SelectField
-              label="Mother Tongue"
+              label="Mother Tongue (Optional)"
               name="motherTongueId"
               value={form.motherTongueId}
               data={motherTonguesQuery.data}
-              placeholder="Mother Tongue"
+              placeholder="Mother Tongue (optional)"
               isLoading={motherTonguesQuery.isLoading}
+              required={false}
             />
 
             <SelectField
-              label="Preferred Country"
+              label="Preferred Country (Optional)"
               name="countryId"
               value={form.countryId}
               data={countriesQuery.data}
-              placeholder="Country"
+              placeholder="Country (optional)"
               isLoading={countriesQuery.isLoading}
+              required={false}
             />
 
             <SelectField
-              label="Preferred State"
+              label="Preferred State (Optional)"
               name="stateId"
               value={form.stateId}
               data={statesQuery.data}
-              placeholder="State"
+              placeholder="State (optional)"
               disabled={!form.countryId}
               isLoading={statesQuery.isLoading}
+              required={false}
             />
 
             <SelectField
-              label="Preferred City"
+              label="Preferred City (Optional)"
               name="cityId"
               value={form.cityId}
               data={citiesQuery.data}
-              placeholder="City"
+              placeholder="City (optional)"
               disabled={!form.stateId}
               isLoading={citiesQuery.isLoading}
+              required={false}
             />
 
             <SelectField
-              label="Education Level"
+              label="Education Level (Optional)"
               name="educationLevelId"
               value={form.educationLevelId}
               data={educationLevelsQuery.data}
-              placeholder="Education Level"
+              placeholder="Education Level (optional)"
               isLoading={educationLevelsQuery.isLoading}
+              required={false}
             />
 
             <SelectField
-              label="Education Field"
+              label="Education Field (Optional)"
               name="educationFieldId"
               value={form.educationFieldId}
               data={educationFieldsQuery.data}
-              placeholder="Education Field"
+              placeholder="Education Field (optional)"
               disabled={!form.educationLevelId}
               isLoading={educationFieldsQuery.isLoading}
+              required={false}
             />
 
             <SelectField
-              label="Working With"
+              label="Working With (Optional)"
               name="workingWithId"
               value={form.workingWithId}
               data={workingWithQuery.data}
-              placeholder="Working With"
+              placeholder="Working With (optional)"
               isLoading={workingWithQuery.isLoading}
+              required={false}
             />
 
             <SelectField
-              label="Working With Category"
+              label="Working With Category (Optional)"
               name="workingCategoryId"
               value={form.workingCategoryId}
               data={workingCategoriesQuery.data}
-              placeholder="Category"
+              placeholder="Category (optional)"
               disabled={!form.workingWithId}
               isLoading={workingCategoriesQuery.isLoading}
+              required={false}
             />
 
             <SelectField
-              label="Sub-Category"
+              label="Sub-Category (Optional)"
               name="subCategoryId"
               value={form.subCategoryId}
               data={workingSubcategoriesQuery.data}
-              placeholder="Sub-Category"
+              placeholder="Sub-Category (optional)"
               disabled={!form.workingCategoryId}
               isLoading={workingSubcategoriesQuery.isLoading}
+              required={false}
             />
 
-            {/* Height Preference */}
-            <div style={{ marginBottom: 24 }}>
-              <label style={labelStyle}>Height preference</label>
+            {/* Height Preference - REQUIRED */}
+            <div style={{ marginBottom: 24 }} id="field-height">
+              <label style={labelStyle}>
+                Height preference <span style={{ color: "#dc2626", marginLeft: 4 }}>*</span>
+              </label>
               <DualRangeSlider
                 min={48}
                 max={84}
@@ -633,7 +766,7 @@ export default function PartenerPreference() {
                 alignItems: "center",
                 justifyContent: "center",
                 gap: 10,
-                marginTop: 8,
+                marginTop: 24,
               }}
             >
               {isSaving ? (

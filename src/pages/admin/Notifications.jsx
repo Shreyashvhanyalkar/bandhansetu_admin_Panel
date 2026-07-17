@@ -86,6 +86,13 @@ function UserSelect({ selected, onChange, error, onOpenChange }) {
   const [search, setSearch] = useState("");
   const ref = useRef(null);
   const scrollContainerRef = useRef(null);
+  
+  // Track if we've done initial load
+  const initialLoadRef = useRef(false);
+  // Debounce timer ref
+  const debounceTimerRef = useRef(null);
+  // Prevent multiple refetch calls
+  const isRefetchingRef = useRef(false);
 
   const { ref: loadMoreRef, inView } = useInView({
     threshold: 0.1,
@@ -102,32 +109,91 @@ function UserSelect({ selected, onChange, error, onOpenChange }) {
     refetch,
   } = useAllUsersInfinite(search, 20);
 
-const allUsers = useMemo(
+  const allUsers = useMemo(
     () => data?.pages?.flatMap(page => page.users) || [],
     [data]
-  );  const totalLoaded = allUsers.length;
+  );
+  const totalLoaded = allUsers.length;
 
- 
-
+  // Handle click outside
   useEffect(() => {
     function handleClickOutside(e) {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target)) {
+        setOpen(false);
+      }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [open]);
+  }, []);
 
+  // Handle infinite scroll
   useEffect(() => {
     if (inView && hasNextPage && !isFetchingNextPage) {
       fetchNextPage();
     }
   }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  useEffect(() => {
-    if (open) {
-      refetch();
+  // ✅ FIX: Single source of truth for fetching
+  const performFetch = useCallback((searchValue = search) => {
+    // Prevent duplicate refetch calls
+    if (isRefetchingRef.current) {
+      console.log('⏳ Skipping duplicate refetch');
+      return;
     }
-  }, [search, open, refetch]);
+    
+    isRefetchingRef.current = true;
+    console.log('🔄 Fetching users with search:', searchValue);
+    
+    refetch().finally(() => {
+      isRefetchingRef.current = false;
+    });
+  }, [search, refetch]);
+
+  // ✅ Handle search with proper debounce - only ONE call
+  const handleSearchChange = useCallback((value) => {
+    setSearch(value);
+    
+    // Clear existing timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    
+    // Don't fetch if empty search and already have data
+    if (!value && data?.pages?.length > 0) {
+      return;
+    }
+    
+    // Debounce the fetch - only ONE call after typing stops
+    debounceTimerRef.current = setTimeout(() => {
+      if (open) {
+        performFetch(value);
+      }
+    }, 800); // 800ms debounce
+  }, [open, performFetch, data]);
+
+  // ✅ Handle dropdown open - only fetch if no data
+  const handleOpen = useCallback(() => {
+    setOpen(true);
+    
+    // Only fetch if we don't have data yet AND not already loading
+    if (!initialLoadRef.current && !data?.pages?.length && !isLoading) {
+      initialLoadRef.current = true;
+      // Small delay to ensure state is updated
+      setTimeout(() => {
+        performFetch('');
+      }, 50);
+    }
+  }, [performFetch, data, isLoading]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      isRefetchingRef.current = false;
+    };
+  }, []);
 
   const toggleUser = (userId) => {
     if (selected.includes(userId)) {
@@ -143,9 +209,10 @@ const allUsers = useMemo(
     <div ref={ref} className="relative">
       <div
         onClick={() => {
-          setOpen(!open);
           if (!open) {
-            refetch();
+            handleOpen();
+          } else {
+            setOpen(false);
           }
         }}
         className={`border rounded-lg p-1.5 cursor-pointer bg-white min-h-[38px] flex flex-wrap gap-1.5 items-center transition-all ${
@@ -188,7 +255,7 @@ const allUsers = useMemo(
               type="text"
               placeholder="Search users..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               className="w-full px-2.5 py-1.5 border border-gray-200 rounded-md text-sm focus:outline-none focus:border-[#bd201c] focus:ring-1 focus:ring-[#fef2f2] bg-white"
               autoFocus
             />
@@ -203,7 +270,7 @@ const allUsers = useMemo(
             ref={scrollContainerRef}
             className="overflow-y-auto max-h-48"
           >
-            {isLoading ? (
+            {isLoading && !data ? (
               <div className="p-3 text-center text-sm text-gray-500">
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[#bd201c] mx-auto mb-2"></div>
                 Loading users...

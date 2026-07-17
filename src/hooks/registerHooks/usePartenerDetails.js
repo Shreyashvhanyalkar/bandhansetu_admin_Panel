@@ -220,7 +220,6 @@ export const useWorkingSubcategories = (categoryId) =>
 export const useSavePartnerPreferences = () =>
   useMutation({
     mutationFn: async (payload) => {
-      console.log("💾 Saving partner preferences:", payload);
       
       const res = await fetch(`${BASE_URL}/api/auth/admin/users/partner-preferences`, {
         method: "POST",
@@ -235,7 +234,6 @@ export const useSavePartnerPreferences = () =>
         throw new Error("Invalid JSON response from server");
       }
 
-      console.log("📦 Save response:", data);
 
       if (!res.ok) {
         if (res.status === 409) {
@@ -250,6 +248,5 @@ export const useSavePartnerPreferences = () =>
       console.error("❌ Save mutation error:", error);
     },
     onSuccess: (data) => {
-      console.log("✅ Save mutation success:", data);
     },
   });

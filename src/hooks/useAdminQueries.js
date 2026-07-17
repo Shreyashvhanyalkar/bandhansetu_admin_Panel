@@ -42,7 +42,6 @@ export const useAllUsersInfinite = (filters = {}) => {
       if (state) params.set("state", state);
 
       const url = `${BASE_URL}/api/auth/admin/users?${params.toString()}`;
-      console.log(`Fetching infinite - offset: ${pageParam}, limit: ${limit}`, params.toString());
 
       const res = await fetch(url, { headers: getAuthHeaders() });
 
@@ -52,7 +51,6 @@ export const useAllUsersInfinite = (filters = {}) => {
       }
 
       const response = await res.json();
-      console.log("Infinite response:", response);
 
       // Handle array response (no pagination metadata)
       let usersData = [];
@@ -139,7 +137,6 @@ export const useAllUsers = (filters = {}) => {
       if (state) params.set("state", state);
 
       const url = `${BASE_URL}/api/auth/admin/users?${params.toString()}`;
-      console.log("Fetching users with URL:", url);
 
       const res = await fetch(url, { headers: getAuthHeaders() });
 

@@ -1,5 +1,5 @@
 // src/pages/admin/register/PersonalDetails.jsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   useDiets,
@@ -7,6 +7,41 @@ import {
   useSkinTones,
   useSavePersonalDetails,
 } from "../../../hooks/registerHooks/usePersonalDetails";
+
+// Toast Component
+function Toast({ toast, onClose }) {
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(onClose, 5000);
+    return () => clearTimeout(timer);
+  }, [toast, onClose]);
+
+  if (!toast) return null;
+
+  return (
+    <div className="fixed top-20 right-4 z-50 animate-slide-in">
+      <div className={`rounded-lg shadow-lg p-4 min-w-[300px] max-w-md ${
+        toast.type === "success" ? "bg-green-50 border-l-4 border-green-500" : "bg-red-50 border-l-4 border-red-500"
+      }`}>
+        <div className="flex items-start gap-3">
+          <div className="flex-1">
+            <p className={`font-semibold ${toast.type === "success" ? "text-green-800" : "text-red-800"}`}>
+              {toast.title}
+            </p>
+            {toast.message && (
+              <p className="text-sm mt-1 text-gray-600">{toast.message}</p>
+            )}
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function PersonalDetails() {
   const navigate = useNavigate();
@@ -17,6 +52,11 @@ export default function PersonalDetails() {
   const basicDetails = location.state?.basicDetails || null;
   const professionalDetails = location.state?.professionalDetails || null;
   const userId = registerData?.userId;
+
+  // Refs for scroll preservation
+  const formRef = useRef(null);
+  const scrollContainerRef = useRef(null);
+  const scrollPositionRef = useRef(0);
 
   // Check if user data exists
   useEffect(() => {
@@ -39,11 +79,12 @@ export default function PersonalDetails() {
     bodyTypeLabel: "",
     skinToneId: "",
     skinToneLabel: "",
-    anyDisability: "No",
+    anyDisability: "",
   });
 
   const [errors, setErrors] = useState({});
   const [isSaving, setIsSaving] = useState(false);
+  const [toast, setToast] = useState(null);
 
   // ✅ MASTER DATA QUERIES
   const dietsQuery = useDiets();
@@ -53,8 +94,13 @@ export default function PersonalDetails() {
   // ✅ SAVE MUTATION
   const savePersonalDetailsMutation = useSavePersonalDetails();
 
-  // Update form
-  const update = (key, value, label) => {
+  // Update form with scroll preservation
+  const update = useCallback((key, value, label) => {
+    // Save current scroll position before state update
+    if (scrollContainerRef.current) {
+      scrollPositionRef.current = scrollContainerRef.current.scrollTop;
+    }
+
     setForm((prev) => {
       const next = { ...prev, [key]: value };
       
@@ -67,20 +113,27 @@ export default function PersonalDetails() {
       return next;
     });
     setErrors((p) => ({ ...p, [key.replace("Id", "")]: "" }));
-  };
+
+    // Restore scroll position after state update
+    requestAnimationFrame(() => {
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTop = scrollPositionRef.current;
+      }
+    });
+  }, []);
 
   const validate = () => {
     const e = {};
     
+    // ✅ REQUIRED: Diet
     if (!form.dietId) e.dietId = "Please select diet";
-    if (!form.smoke) e.smoke = "Please select an option";
-    if (!form.drink) e.drink = "Please select an option";
+    
+    // ✅ REQUIRED: Height (both feet and inches)
     if (!form.heightFeet) e.heightFeet = "Please select feet";
     if (!form.heightInches) e.heightInches = "Please select inches";
+    
+    // ✅ REQUIRED: Weight
     if (!form.userWeight) e.userWeight = "Please select weight";
-    if (!form.bodyTypeId) e.bodyTypeId = "Please select body type";
-    if (!form.skinToneId) e.skinToneId = "Please select skin tone";
-    if (!form.anyDisability) e.anyDisability = "Please select an option";
     
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -103,31 +156,63 @@ export default function PersonalDetails() {
       heightFeet: heightFeet,
       heightInches: heightInches,
       userWeight: userWeight,
-      smoke: form.smoke,
-      drink: form.drink,
-      anyDisability: form.anyDisability,
-      bodyType: form.bodyTypeLabel,
-      skinTone: form.skinToneLabel,
     };
 
-    console.log("📤 Sending personal details payload:", payload);
+    // ✅ Only add optional fields if they have values
+    if (form.smoke) {
+      payload.smoke = form.smoke;
+    }
+
+    if (form.drink) {
+      payload.drink = form.drink;
+    }
+
+    if (form.bodyTypeId && form.bodyTypeLabel) {
+      payload.bodyType = form.bodyTypeLabel;
+    }
+
+    if (form.skinToneId && form.skinToneLabel) {
+      payload.skinTone = form.skinToneLabel;
+    }
+
+    if (form.anyDisability) {
+      payload.anyDisability = form.anyDisability;
+    }
 
     savePersonalDetailsMutation.mutate(payload, {
       onSuccess: (data) => {
-        console.log("✅ Personal details saved:", data);
         setIsSaving(false);
-        navigate("/admin/register/partner-preference", {
-          state: { 
-            registerData, 
-            basicDetails, 
-            professionalDetails, 
-            personalDetails: form 
-          },
+        
+        // Show success toast
+        setToast({
+          type: "success",
+          title: "Success!",
+          message: "Personal details saved successfully!",
         });
+
+        // Navigate after a short delay to show the toast
+        setTimeout(() => {
+          navigate("/admin/register/partner-preference", {
+            state: { 
+              registerData, 
+              basicDetails, 
+              professionalDetails, 
+              personalDetails: form 
+            },
+          });
+        }, 1000);
       },
       onError: (error) => {
         console.error("❌ Save failed:", error);
         setIsSaving(false);
+        
+        // Show error toast
+        setToast({
+          type: "error",
+          title: "Error!",
+          message: error.message || "Failed to save personal details",
+        });
+        
         setErrors({ submit: error.message || "Failed to save personal details" });
       },
     });
@@ -244,13 +329,18 @@ export default function PersonalDetails() {
     fontFamily: "Rubik, sans-serif",
   };
 
-  const SelectField = ({ label, name, value, data, placeholder, isLoading }) => {
+  // SelectField component
+  const SelectField = ({ label, name, value, data, placeholder, isLoading, required = false }) => {
     const fieldError = errors[name];
     const hasError = !!fieldError;
+    const isPlaceholder = !value;
     
     return (
-      <div style={{ marginBottom: 20 }}>
-        <label style={labelStyle}>{label}</label>
+      <div style={{ marginBottom: 20 }} id={`field-${name}`}>
+        <label style={labelStyle}>
+          {label}
+          {required && <span style={{ color: "#dc2626", marginLeft: 4 }}>*</span>}
+        </label>
         <select
           value={value || ""}
           onChange={(e) => {
@@ -262,13 +352,14 @@ export default function PersonalDetails() {
             ...selectStyle(hasError),
             opacity: isLoading ? 0.6 : 1,
             cursor: isLoading ? "not-allowed" : "pointer",
+            color: isPlaceholder ? "#999" : "#333",
           }}
         >
-          <option value="">
+          <option value="" style={{ color: "#999", fontWeight: 400 }}>
             {isLoading ? "Loading..." : placeholder}
           </option>
           {data?.map((item) => (
-            <option key={item.id} value={item.id}>
+            <option key={item.id} value={item.id} style={{ color: "#333", fontWeight: 400 }}>
               {item.label}
             </option>
           ))}
@@ -282,21 +373,31 @@ export default function PersonalDetails() {
     );
   };
 
-  const SimpleSelectField = ({ label, name, value, options, placeholder }) => {
+  // SimpleSelectField component
+  const SimpleSelectField = ({ label, name, value, options, placeholder, required = false }) => {
     const fieldError = errors[name];
     const hasError = !!fieldError;
+    const isPlaceholder = !value;
     
     return (
-      <div style={{ marginBottom: 20 }}>
-        <label style={labelStyle}>{label}</label>
+      <div style={{ marginBottom: 20 }} id={`field-${name}`}>
+        <label style={labelStyle}>
+          {label}
+          {required && <span style={{ color: "#dc2626", marginLeft: 4 }}>*</span>}
+        </label>
         <select
           value={value || ""}
           onChange={(e) => update(name, e.target.value)}
-          style={selectStyle(hasError)}
+          style={{
+            ...selectStyle(hasError),
+            color: isPlaceholder ? "#999" : "#333",
+          }}
         >
-          <option value="">{placeholder}</option>
+          <option value="" style={{ color: "#999", fontWeight: 400 }}>
+            {placeholder}
+          </option>
           {options.map((opt) => (
-            <option key={opt} value={opt}>
+            <option key={opt} value={opt} style={{ color: "#333", fontWeight: 400 }}>
               {opt}
             </option>
           ))}
@@ -341,24 +442,32 @@ export default function PersonalDetails() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#fbfbfb] px-0 sm:px-4 font-[Rubik,sans-serif]">
-      <div className="w-full sm:max-w-md min-h-screen sm:min-h-[85vh] sm:h-auto sm:rounded-2xl sm:shadow-2xl sm:my-8 flex flex-col relative overflow-hidden bg-white">
+      <Toast toast={toast} onClose={() => setToast(null)} />
+      
+      <div 
+        className="w-full sm:max-w-md min-h-screen sm:min-h-[85vh] sm:h-auto sm:rounded-2xl sm:shadow-2xl sm:my-8 flex flex-col relative overflow-hidden bg-white"
+        ref={formRef}
+      >
         {/* Header */}
         <div style={{ padding: "28px 24px 16px" }}>
           <h1 style={{ fontSize: 22, fontWeight: 800, color: "#601000", margin: 0, fontFamily: "Rubik, sans-serif" }}>
             Personal Details
           </h1>
-          {userId && (
-            <p style={{ fontSize: 12, color: "#999", marginTop: 4 }}>
-              User ID: {userId}
-            </p>
-          )}
         </div>
         <div style={{ borderBottom: "1px solid #eee" }} />
 
         {/* Form */}
-        <div style={{ flex: 1, padding: "20px 24px 32px", overflowY: "auto" }}>
+        <div 
+          ref={scrollContainerRef}
+          style={{ 
+            flex: 1, 
+            padding: "20px 24px 32px", 
+            overflowY: "auto",
+            maxHeight: "calc(100vh - 200px)",
+          }}
+        >
           <form onSubmit={handleSave}>
-            {/* Diet */}
+            {/* Diet - REQUIRED */}
             <SelectField
               label="Diet"
               name="dietId"
@@ -366,39 +475,47 @@ export default function PersonalDetails() {
               data={dietsQuery.data}
               placeholder="Select Diet"
               isLoading={dietsQuery.isLoading}
+              required={true}
             />
 
-            {/* Smoke */}
+            {/* Smoke - OPTIONAL */}
             <SimpleSelectField
-              label="Smoke"
+              label="Smoke (Optional)"
               name="smoke"
               value={form.smoke}
               options={SMOKE_OPTIONS}
-              placeholder="Do you smoke?"
+              placeholder="Do you smoke? (optional)"
+              required={false}
             />
 
-            {/* Drink */}
+            {/* Drink - OPTIONAL */}
             <SimpleSelectField
-              label="Drink"
+              label="Drink (Optional)"
               name="drink"
               value={form.drink}
               options={DRINK_OPTIONS}
-              placeholder="Do you drink?"
+              placeholder="Do you drink? (optional)"
+              required={false}
             />
 
-            {/* Height: Feet + Inches */}
-            <div style={{ marginBottom: 20 }}>
-              <label style={labelStyle}>Height</label>
+            {/* Height: Feet + Inches - REQUIRED */}
+            <div style={{ marginBottom: 20 }} id="field-height">
+              <label style={labelStyle}>
+                Height <span style={{ color: "#dc2626", marginLeft: 4 }}>*</span>
+              </label>
               <div style={{ display: "flex", gap: 10 }}>
                 <div style={{ flex: 1 }}>
                   <select
                     value={form.heightFeet}
                     onChange={(e) => update("heightFeet", e.target.value)}
-                    style={selectStyle(!!errors.heightFeet)}
+                    style={{
+                      ...selectStyle(!!errors.heightFeet),
+                      color: !form.heightFeet ? "#999" : "#333",
+                    }}
                   >
-                    <option value="">Feet</option>
+                    <option value="" style={{ color: "#999", fontWeight: 400 }}>Feet</option>
                     {FEET_OPTIONS.map((ft) => (
-                      <option key={ft} value={ft}>
+                      <option key={ft} value={ft} style={{ color: "#333", fontWeight: 400 }}>
                         {ft} ft
                       </option>
                     ))}
@@ -408,11 +525,14 @@ export default function PersonalDetails() {
                   <select
                     value={form.heightInches}
                     onChange={(e) => update("heightInches", e.target.value)}
-                    style={selectStyle(!!errors.heightInches)}
+                    style={{
+                      ...selectStyle(!!errors.heightInches),
+                      color: !form.heightInches ? "#999" : "#333",
+                    }}
                   >
-                    <option value="">Inches</option>
+                    <option value="" style={{ color: "#999", fontWeight: 400 }}>Inches</option>
                     {INCH_OPTIONS.map((inch) => (
-                      <option key={inch} value={inch}>
+                      <option key={inch} value={inch} style={{ color: "#333", fontWeight: 400 }}>
                         {inch} in
                       </option>
                     ))}
@@ -426,42 +546,46 @@ export default function PersonalDetails() {
               )}
             </div>
 
-            {/* Weight */}
+            {/* Weight - REQUIRED */}
             <SimpleSelectField
               label="Weight (kg)"
               name="userWeight"
               value={form.userWeight}
               options={WEIGHT_OPTIONS}
               placeholder="Select Weight"
+              required={true}
             />
 
-            {/* Body Type */}
+            {/* Body Type - OPTIONAL */}
             <SelectField
-              label="Body Type"
+              label="Body Type (Optional)"
               name="bodyTypeId"
               value={form.bodyTypeId}
               data={bodyTypesQuery.data}
-              placeholder="Select Body Type"
+              placeholder="Select Body Type (optional)"
               isLoading={bodyTypesQuery.isLoading}
+              required={false}
             />
 
-            {/* Skin Tone */}
+            {/* Skin Tone - OPTIONAL */}
             <SelectField
-              label="Skin Tone"
+              label="Skin Tone (Optional)"
               name="skinToneId"
               value={form.skinToneId}
               data={skinTonesQuery.data}
-              placeholder="Select Skin Tone"
+              placeholder="Select Skin Tone (optional)"
               isLoading={skinTonesQuery.isLoading}
+              required={false}
             />
 
-            {/* Any Disability */}
+            {/* Any Disability - OPTIONAL */}
             <SimpleSelectField
-              label="Any Disability"
+              label="Any Disability (Optional)"
               name="anyDisability"
               value={form.anyDisability}
               options={DISABILITY_OPTIONS}
-              placeholder="Select Disability"
+              placeholder="Select Disability (optional)"
+              required={false}
             />
 
             {/* Submit Error */}
@@ -491,7 +615,7 @@ export default function PersonalDetails() {
                 alignItems: "center",
                 justifyContent: "center",
                 gap: 10,
-                marginTop: 8,
+                marginTop: 24,
               }}
             >
               {isSaving ? (

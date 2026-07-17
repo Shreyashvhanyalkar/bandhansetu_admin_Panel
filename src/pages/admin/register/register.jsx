@@ -1,5 +1,5 @@
 // src/pages/admin/register/register.jsx
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useRegisterUser } from "../../../hooks/registerHooks/useRegister";
 
@@ -8,9 +8,21 @@ import Layer1 from "../../../assets/Layer 1.png";
 
 // API only accepts "Male" or "Female" (see endpoint spec)
 const RELATION_GENDERS = [
-  { value: "", label: "Gender" },
   { value: "Male", label: "Male" },
   { value: "Female", label: "Female" },
+];
+
+// Country codes with their dial codes
+const COUNTRY_CODES = [
+  { code: "+91" },
+  { code: "+1" },
+  { code: "+44" },
+  { code: "+61" },
+  { code: "+49" },
+  { code: "+33" },
+  { code: "+971" },
+  { code: "+65" },
+  { code: "+81" },
 ];
 
 // Convert <input type="date"> value (YYYY-MM-DD) to API format (DD-MM-YYYY)
@@ -18,6 +30,21 @@ const toApiDate = (isoDate) => {
   if (!isoDate) return "";
   const [yyyy, mm, dd] = isoDate.split("-");
   return `${dd}-${mm}-${yyyy}`;
+};
+
+// Calculate max date based on gender
+const getMaxDate = (gender) => {
+  const today = new Date();
+  let minAge = 18; // Default
+    
+  if (gender === "Male") {
+    minAge = 21;
+  } else if (gender === "Female") {
+    minAge = 18;
+  }
+  
+  const maxDate = new Date(today.getFullYear() - minAge, today.getMonth(), today.getDate());
+  return maxDate.toISOString().split('T')[0];
 };
 
 export default function RegisterUser() {
@@ -28,10 +55,15 @@ export default function RegisterUser() {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [mobile, setMobile] = useState("");
+  const [countryCode, setCountryCode] = useState("+91");
   const [gender, setGender] = useState("");
   const [dob, setDob] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [errors, setErrors] = useState({});
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  // Calculate max date based on selected gender
+  const maxDate = useMemo(() => getMaxDate(gender), [gender]);
 
   const validate = () => {
     const e = {};
@@ -61,7 +93,7 @@ export default function RegisterUser() {
       lastName: lastName.trim(),
       ...(email.trim() && { email: email.trim().toLowerCase() }),
       mobileNumber: mobile.trim(),
-      countryCode: "+91",
+      countryCode: countryCode,
       gender,
       birthDate: toApiDate(dob),
     };
@@ -181,7 +213,7 @@ export default function RegisterUser() {
                   setEmail(e.target.value);
                   setErrors((p) => ({ ...p, email: "" }));
                 }}
-                placeholder="Email (optional)"
+                placeholder="Email"
                 style={inputStyle}
               />
               {errors.email && (
@@ -189,24 +221,117 @@ export default function RegisterUser() {
               )}
             </div>
 
-            {/* Mobile with +91 */}
+            {/* Mobile with Country Code Dropdown */}
             <div style={{ marginBottom: 16 }}>
-              <div style={{ display: "flex", gap: 8 }}>
-                <div
-                  style={{
-                    ...inputStyle,
-                    width: "90px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "14px 16px",
-                  }}
-                >
-                  +91
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#333">
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                  </svg>
+              <div style={{ display: "flex", gap: 8, position: "relative" }}>
+                {/* Country Code Dropdown */}
+                <div style={{ position: "relative", width: "100px" }}>
+                  <button
+                    type="button"
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    style={{
+                      ...inputStyle,
+                      width: "100%",
+                      padding: "14px 12px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      cursor: "pointer",
+                      background: "#fff",
+                      border: "1px solid #9B0424",
+                      borderRadius: "50px",
+                      minWidth: "80px",
+                    }}
+                  >
+                    <span style={{ fontWeight: 400, fontSize: "16px" }}>{countryCode}</span>
+                    <svg 
+                      width="12" 
+                      height="12" 
+                      viewBox="0 0 24 24" 
+                      fill="none" 
+                      stroke="#333"
+                      style={{ 
+                        transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                        transition: 'transform 0.2s ease',
+                        marginLeft: "4px"
+                      }}
+                    >
+                      <polyline points="6 9 12 15 18 9" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  {isDropdownOpen && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "calc(100% + 4px)",
+                        left: 0,
+                        right: 0,
+                        background: "#fff",
+                        border: "1px solid #ddd",
+                        borderRadius: "12px",
+                        boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                        maxHeight: "200px",
+                        overflowY: "auto",
+                        zIndex: 100,
+                        padding: "4px 0",
+                      }}
+                    >
+                      {COUNTRY_CODES.map((item) => (
+                        <button
+                          key={item.code}
+                          type="button"
+                          onClick={() => {
+                            setCountryCode(item.code);
+                            setIsDropdownOpen(false);
+                          }}
+                          style={{
+                            width: "100%",
+                            padding: "10px 14px",
+                            border: "none",
+                            background: countryCode === item.code ? "#fce4e4" : "transparent",
+                            cursor: "pointer",
+                            textAlign: "left",
+                            fontSize: "14px",
+                            color: "#333",
+                            fontFamily: "Rubik, sans-serif",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            transition: "background 0.15s ease",
+                          }}
+                          onMouseEnter={(e) => {
+                            if (countryCode !== item.code) {
+                              e.currentTarget.style.background = "#f5f5f5";
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (countryCode !== item.code) {
+                              e.currentTarget.style.background = "transparent";
+                            }
+                          }}
+                        >
+                          <span style={{ fontWeight: 400 }}>{item.code}</span>
+                          {countryCode === item.code && (
+                            <svg 
+                              width="16" 
+                              height="16" 
+                              viewBox="0 0 24 24" 
+                              fill="none" 
+                              stroke="#9B0424" 
+                              strokeWidth="2.5"
+                            >
+                              <polyline points="20 6 9 17 4 12" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
+
+                {/* Mobile Number Input */}
                 <input
                   type="tel"
                   maxLength={10}
@@ -224,18 +349,25 @@ export default function RegisterUser() {
               )}
             </div>
 
-            {/* Gender */}
+            {/* Gender - Updated to look like placeholder */}
             <div style={{ marginBottom: 16 }}>
               <select
                 value={gender}
                 onChange={(e) => {
                   setGender(e.target.value);
+                  setDob(""); // Reset DOB when gender changes
                   setErrors((p) => ({ ...p, gender: "" }));
                 }}
-                style={selectStyle}
+                style={{
+                  ...selectStyle,
+                  color: gender === "" ? "#999" : "#333",
+                }}
               >
+                <option value="" style={{ color: "#999", fontWeight: 400 }}>
+                  Gender
+                </option>
                 {RELATION_GENDERS.map((option) => (
-                  <option key={option.value} value={option.value} disabled={!option.value}>
+                  <option key={option.value} value={option.value}>
                     {option.label}
                   </option>
                 ))}
@@ -273,6 +405,7 @@ export default function RegisterUser() {
                     setDob(e.target.value);
                     setErrors((p) => ({ ...p, dob: "" }));
                   }}
+                  max={maxDate} // Dynamic max date based on gender
                   placeholder="DD-MM-YYYY"
                   style={{ ...inputStyle, paddingLeft: 46, color: dob ? "#333" : "#999" }}
                 />
@@ -281,7 +414,11 @@ export default function RegisterUser() {
                 <p style={{ fontSize: 11, color: "#9B0424", margin: "5px 0 0 16px" }}>{errors.dob}</p>
               )}
               <p style={{ fontSize: 10, color: "#999", margin: "5px 0 0 16px" }}>
-                Minimum age: 21 for male, 18 for female
+                {gender === "Male" 
+                  ? "Minimum age: 21 years" 
+                  : gender === "Female" 
+                    ? "Minimum age: 18 years" 
+                    : "Minimum age: 21 for male, 18 for female"}
               </p>
             </div>
 

@@ -145,7 +145,6 @@ export const useWorkingSubcategories = (categoryId) =>
 export const useSaveProfessionalDetails = () =>
   useMutation({
     mutationFn: async (payload) => {
-      console.log("💾 Saving professional details:", payload);
       
       const res = await fetch(`${BASE_URL}/api/auth/admin/users/professional-details`, {
         method: "POST",
@@ -160,7 +159,6 @@ export const useSaveProfessionalDetails = () =>
         throw new Error("Invalid JSON response from server");
       }
 
-      console.log("📦 Save response:", data);
 
       if (!res.ok) {
         throw new Error(data.message || "Failed to save professional details");
@@ -172,6 +170,5 @@ export const useSaveProfessionalDetails = () =>
       console.error("❌ Save mutation error:", error);
     },
     onSuccess: (data) => {
-      console.log("✅ Save mutation success:", data);
     },
   });

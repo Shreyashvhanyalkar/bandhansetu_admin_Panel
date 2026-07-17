@@ -1,5 +1,5 @@
 // src/pages/admin/register/BasicDetails.jsx
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useLayoutEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   useReligions,
@@ -13,6 +13,41 @@ import {
   useSaveBasicDetails,
 } from "../../../hooks/registerHooks/useBasicdetail";
 
+// Toast Component
+function Toast({ toast, onClose }) {
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(onClose, 5000);
+    return () => clearTimeout(timer);
+  }, [toast, onClose]);
+
+  if (!toast) return null;
+
+  return (
+    <div className="fixed top-20 right-4 z-50 animate-slide-in">
+      <div className={`rounded-lg shadow-lg p-4 min-w-[300px] max-w-md ${
+        toast.type === "success" ? "bg-green-50 border-l-4 border-green-500" : "bg-red-50 border-l-4 border-red-500"
+      }`}>
+        <div className="flex items-start gap-3">
+          <div className="flex-1">
+            <p className={`font-semibold ${toast.type === "success" ? "text-green-800" : "text-red-800"}`}>
+              {toast.title}
+            </p>
+            {toast.message && (
+              <p className="text-sm mt-1 text-gray-600">{toast.message}</p>
+            )}
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function BasicDetails() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -21,9 +56,12 @@ export default function BasicDetails() {
   const registerData = location.state?.registerData || null;
   const userId = registerData?.userId;
 
-  // Ref to track which field is being interacted with
+  // Refs
   const activeFieldRef = useRef(null);
   const formRef = useRef(null);
+  const scrollContainerRef = useRef(null);
+  const scrollPositionRef = useRef(0);
+  const isUpdatingRef = useRef(false);
 
   // ✅ STEP 1: ALL useState hooks FIRST
   const [form, setForm] = useState({
@@ -50,45 +88,51 @@ export default function BasicDetails() {
 
   const [errors, setErrors] = useState({});
   const [isSaving, setIsSaving] = useState(false);
+  const [toast, setToast] = useState(null);
 
-  // ✅ STEP 2: Master data queries (don't depend on form)
+  // ✅ STEP 2: Master data queries
   const religionsQuery = useReligions();
   const maritalStatusesQuery = useMaritalStatuses();
   const motherTonguesQuery = useMotherTongues();
   const countriesQuery = useCountries();
 
-  // ✅ STEP 3: Cascading queries (NOW form is defined)
-  const castesQuery = useCastes(
-    form.religionId ? form.religionId : null
-  );
-  const subcastesQuery = useSubcastes(
-    form.casteId ? form.casteId : null
-  );
-  const statesQuery = useStates(
-    form.countryId ? form.countryId : null
-  );
-  const citiesQuery = useCities(
-    form.stateId ? form.stateId : null
-  );
+  // ✅ STEP 3: Cascading queries
+  const castesQuery = useCastes(form.religionId || null);
+  const subcastesQuery = useSubcastes(form.casteId || null);
+  const statesQuery = useStates(form.countryId || null);
+  const citiesQuery = useCities(form.stateId || null);
 
   // ✅ STEP 4: Save mutation
   const saveBasicDetailsMutation = useSaveBasicDetails();
 
   // ✅ STEP 5: useEffect hooks
   useEffect(() => {
-    // Check authentication
     const token = localStorage.getItem("token");
     if (!token) {
       navigate("/login");
     }
   }, [navigate]);
 
+  // Restore scroll position after render
+  useLayoutEffect(() => {
+    if (isUpdatingRef.current && scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = scrollPositionRef.current;
+      isUpdatingRef.current = false;
+    }
+  });
+
   // Update form and handle cascading resets
   const update = useCallback((key, idValue, labelValue) => {
+    // Save scroll position before state update
+    if (scrollContainerRef.current) {
+      scrollPositionRef.current = scrollContainerRef.current.scrollTop;
+      isUpdatingRef.current = true;
+    }
+
     setForm((prev) => {
       const next = { ...prev, [key]: idValue, [`${key.replace("Id", "Label")}`]: labelValue };
 
-      // Reset cascading fields when parent changes
+      // Reset cascading fields
       if (key === "religionId") {
         next.casteId = "";
         next.casteLabel = "";
@@ -109,8 +153,6 @@ export default function BasicDetails() {
         next.cityId = "";
         next.cityLabel = "";
       }
-
-      // Handle marital status selection
       if (key === "maritalStatusId") {
         const showsChildren = labelValue === "Divorced" || labelValue === "Widowed";
         next.maritalStatusShowsChildren = showsChildren;
@@ -122,8 +164,18 @@ export default function BasicDetails() {
 
       return next;
     });
-    // Clear error for this field
     setErrors((p) => ({ ...p, [key.replace("Id", "")]: "" }));
+  }, []);
+
+  // Update child status
+  const updateChildStatus = useCallback((value) => {
+    if (scrollContainerRef.current) {
+      scrollPositionRef.current = scrollContainerRef.current.scrollTop;
+      isUpdatingRef.current = true;
+    }
+
+    setForm((prev) => ({ ...prev, childStatus: value }));
+    setErrors((p) => ({ ...p, childStatus: "" }));
   }, []);
 
   const validate = () => {
@@ -139,7 +191,7 @@ export default function BasicDetails() {
       if (form.childStatus === "Yes" && !form.numberOfChildren) {
         e.numberOfChildren = "Please enter number of children";
       }
-      if (form.childStatus === "Yes" && form.numberOfChildren && form.numberOfChildren < 1) {
+      if (form.childStatus === "Yes" && form.numberOfChildren && parseInt(form.numberOfChildren) < 1) {
         e.numberOfChildren = "Must be at least 1";
       }
     }
@@ -163,24 +215,45 @@ export default function BasicDetails() {
       stateName: form.stateLabel,
       cityName: form.cityLabel,
       maritalStatus: form.maritalStatusLabel,
-      ...(form.maritalStatusShowsChildren && form.childStatus && {
-        childStatus: form.childStatus,
-      }),
-      ...(form.maritalStatusShowsChildren && form.childStatus === "Yes" && {
-        numberOfChildrens: Number(form.numberOfChildren),
-      }),
       mothertongueName: form.motherTongueLabel,
     };
+
+    if (form.maritalStatusShowsChildren && form.childStatus) {
+      payload.childStatus = form.childStatus;
+      if (form.childStatus === "Yes" && form.numberOfChildren) {
+        payload.numberOfChildrens = parseInt(form.numberOfChildren);
+      }
+    }
 
     saveBasicDetailsMutation.mutate(payload, {
       onSuccess: (data) => {
         setIsSaving(false);
-        navigate("/admin/register/professional-details", {
-          state: { registerData, basicDetails: form },
+        
+        // Show success toast
+        setToast({
+          type: "success",
+          title: "Success!",
+          message: "Basic details saved successfully!",
         });
+
+        // Navigate after a short delay to show the toast
+        setTimeout(() => {
+          navigate("/admin/register/professional-details", {
+            state: { registerData, basicDetails: form },
+          });
+        }, 1000);
       },
       onError: (error) => {
+        console.error("❌ Save failed:", error);
         setIsSaving(false);
+        
+        // Show error toast
+        setToast({
+          type: "error",
+          title: "Error!",
+          message: error.message || "Failed to save basic details",
+        });
+        
         setErrors({ submit: error.message || "Failed to save basic details" });
       },
     });
@@ -276,35 +349,42 @@ export default function BasicDetails() {
     fontFamily: "Rubik, sans-serif",
   };
 
+  // Field component with scroll preservation
   const Field = ({ label, name, value, data, placeholder, disabled, isLoading }) => {
     const fieldName = name.replace("Id", "");
     const hasError = !!errors[fieldName];
-    
-    // Handle focus to track active field
-    const handleFocus = () => {
-      activeFieldRef.current = name;
-    };
+    const isPlaceholder = !value;
+
+    const handleChange = useCallback((e) => {
+      // Save scroll position before any state update
+      if (scrollContainerRef.current) {
+        scrollPositionRef.current = scrollContainerRef.current.scrollTop;
+        isUpdatingRef.current = true;
+      }
+
+      const selectedItem = data?.find((item) => item.id === e.target.value);
+      update(name, e.target.value, selectedItem?.label || "");
+    }, [data, name, update]);
 
     return (
       <div style={{ marginBottom: 20 }} id={`field-${name}`}>
         <label style={labelStyle}>{label}</label>
         <select
           value={value || ""}
-          onFocus={handleFocus}
-          onChange={(e) => {
-            const selectedItem = data?.find((item) => item.id === e.target.value);
-            update(name, e.target.value, selectedItem?.label || "");
-          }}
+          onChange={handleChange}
           disabled={disabled || isLoading}
           style={{
             ...selectStyle(hasError),
             opacity: disabled || isLoading ? 0.6 : 1,
             cursor: disabled || isLoading ? "not-allowed" : "pointer",
+            color: isPlaceholder ? "#999" : "#333",
           }}
         >
-          <option value="">{isLoading ? "Loading..." : placeholder}</option>
+          <option value="" style={{ color: "#999", fontWeight: 400 }}>
+            {isLoading ? "Loading..." : placeholder}
+          </option>
           {data?.map((item) => (
-            <option key={item.id} value={item.id}>
+            <option key={item.id} value={item.id} style={{ color: "#333", fontWeight: 400 }}>
               {item.label}
             </option>
           ))}
@@ -312,6 +392,52 @@ export default function BasicDetails() {
         {hasError && (
           <p style={{ fontSize: 11, color: "#dc2626", margin: "6px 0 0 4px" }}>
             {errors[fieldName]}
+          </p>
+        )}
+      </div>
+    );
+  };
+
+  // Child Status Field
+  const ChildStatusField = ({ label, name, value, placeholder, error, onChange }) => {
+    const hasError = !!error;
+    const options = [
+      { id: "Yes", label: "Yes" },
+      { id: "No", label: "No" },
+    ];
+    const isPlaceholder = !value;
+
+    const handleChange = useCallback((e) => {
+      if (scrollContainerRef.current) {
+        scrollPositionRef.current = scrollContainerRef.current.scrollTop;
+        isUpdatingRef.current = true;
+      }
+      onChange(e.target.value);
+    }, [onChange]);
+
+    return (
+      <div style={{ marginBottom: 20 }}>
+        <label style={labelStyle}>{label}</label>
+        <select
+          value={value || ""}
+          onChange={handleChange}
+          style={{
+            ...selectStyle(hasError),
+            color: isPlaceholder ? "#999" : "#333",
+          }}
+        >
+          <option value="" style={{ color: "#999", fontWeight: 400 }}>
+            {placeholder}
+          </option>
+          {options.map((opt) => (
+            <option key={opt.id} value={opt.id} style={{ color: "#333", fontWeight: 400 }}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+        {hasError && (
+          <p style={{ fontSize: 11, color: "#dc2626", margin: "6px 0 0 4px" }}>
+            {error}
           </p>
         )}
       </div>
@@ -331,7 +457,6 @@ export default function BasicDetails() {
     fontFamily: "Rubik, sans-serif",
   });
 
-  // Handle number input change
   const handleNumberChange = (e) => {
     const value = e.target.value;
     setForm((prev) => ({ ...prev, numberOfChildren: value }));
@@ -340,6 +465,8 @@ export default function BasicDetails() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#fbfbfb] px-0 sm:px-4 font-[Rubik,sans-serif]">
+      <Toast toast={toast} onClose={() => setToast(null)} />
+      
       <div 
         className="w-full sm:max-w-md min-h-screen sm:min-h-[85vh] sm:h-auto sm:rounded-2xl sm:shadow-2xl sm:my-8 flex flex-col relative overflow-hidden bg-white"
         ref={formRef}
@@ -349,20 +476,17 @@ export default function BasicDetails() {
           <h1 style={{ fontSize: 22, fontWeight: 800, color: "#601000", margin: 0, fontFamily: "Rubik, sans-serif" }}>
             Basic Details
           </h1>
-          {userId && (
-            <p style={{ fontSize: 12, color: "#999", marginTop: 4 }}>
-              User ID: {userId}
-            </p>
-          )}
         </div>
         <div style={{ borderBottom: "1px solid #eee" }} />
 
         {/* Form */}
         <div 
+          ref={scrollContainerRef}
           style={{ 
             flex: 1, 
             padding: "20px 24px 32px", 
             overflowY: "auto",
+            maxHeight: "calc(100vh - 200px)",
           }}
         >
           <form onSubmit={handleSave}>
@@ -386,7 +510,7 @@ export default function BasicDetails() {
             />
 
             <Field
-              label="Sub Caste"
+              label="Sub Caste (optional)"
               name="subcasteId"
               value={form.subcasteId}
               data={subcastesQuery.data}
@@ -433,18 +557,16 @@ export default function BasicDetails() {
               isLoading={maritalStatusesQuery.isLoading}
             />
 
-            {/* Conditional Children Fields (for Divorced/Widowed) */}
+            {/* Conditional Children Fields */}
             {form.maritalStatusShowsChildren && (
               <>
-                <Field
+                <ChildStatusField
                   label="Do you have children?"
-                  name="childStatusId"
+                  name="childStatus"
                   value={form.childStatus}
-                  data={[
-                    { id: "Yes", label: "Yes" },
-                    { id: "No", label: "No" },
-                  ]}
                   placeholder="Select an option"
+                  error={errors.childStatus}
+                  onChange={updateChildStatus}
                 />
 
                 {form.childStatus === "Yes" && (
@@ -481,7 +603,6 @@ export default function BasicDetails() {
               <p style={{ fontSize: 11, color: "#dc2626", margin: "12px 0 0 4px" }}>{errors.submit}</p>
             )}
 
-            {/* Save and Continue Button */}
             <button
               type="submit"
               disabled={isSaving}
@@ -504,9 +625,7 @@ export default function BasicDetails() {
                 marginTop: 24,
               }}
             >
-              {isSaving ? (
-                "Saving..."
-              ) : (
+              {isSaving ? "Saving..." : (
                 <>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" strokeLinejoin="round" />

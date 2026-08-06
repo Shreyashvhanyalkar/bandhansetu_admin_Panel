@@ -1,5 +1,6 @@
 // components/admin/NotificationManagement.jsx
 import { useState, useEffect, useRef, useCallback,useMemo  } from "react";
+import { getAuthHeaders, BASE_URL } from "../../utils/apiClient";
 import { useInView } from "react-intersection-observer";
 import { useLocation } from "react-router-dom";
 import {
@@ -142,7 +143,7 @@ function UserSelect({ selected, onChange, error, onOpenChange }) {
     }
     
     isRefetchingRef.current = true;
-    console.log('🔄 Fetching users with search:', searchValue);
+    
     
     refetch().finally(() => {
       isRefetchingRef.current = false;
@@ -773,15 +774,10 @@ export default function NotificationManagement() {
       if (religionName) params.set("religion", religionName);
       if (cityName) params.set("city", cityName);
       
-      const url = `${import.meta.env.VITE_BASE_URL}/api/auth/admin/users?${params.toString()}`;
+      const url = `${BASE_URL}/api/auth/admin/users?${params.toString()}`;
       
       const response = await fetch(url, {
-        headers: {
-          "Content-Type": "application/json",
-          "x-app-type": "admin",
-          "Accept-Language": "en",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
+        headers: getAuthHeaders(),
       });
       
       if (response.ok) {

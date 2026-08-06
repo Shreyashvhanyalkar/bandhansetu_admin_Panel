@@ -2,13 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useDispatch } from "react-redux";
 import { updateUser } from "../features/auth/Authslice";
-
-const BASE_URL = import.meta.env.VITE_BASE_URL;
-
-const getAuthHeaders = () => ({
-  "Content-Type": "application/json",
-  Authorization: `Bearer ${localStorage.getItem("token")}`,
-});
+import { getAuthHeaders, BASE_URL } from "../utils/apiClient";
 
 export const useUserProfile = () => {
   const dispatch = useDispatch();

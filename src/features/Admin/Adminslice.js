@@ -1,6 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-
-const BASE_URL = import.meta.env.VITE_BASE_URL;
+import { BASE_URL, getAuthHeaders } from "../../utils/apiClient";
 
 // Fetch all pending users
 export const fetchPendingUsers = createAsyncThunk(

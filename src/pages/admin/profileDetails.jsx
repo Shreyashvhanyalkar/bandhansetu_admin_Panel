@@ -2,15 +2,9 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
+import { getAuthHeaders, BASE_URL } from "../../utils/apiClient";
 
-const BASE_URL = import.meta.env.VITE_BASE_URL;
 const IMAGE_DOWNLOAD_URL = `${BASE_URL}/api/file/download/thumbnail_`;
-
-const getAuthHeaders = () => ({
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${localStorage.getItem("token")}`,
-    "x-app-type": "admin",
-});
 
 const fetchUserGallery = async (userId) => {
     const res = await fetch(`${BASE_URL}/api/auth/user/gallery/${userId}`, {

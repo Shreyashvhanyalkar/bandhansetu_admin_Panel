@@ -1,35 +1,13 @@
 // src/hooks/registerHooks/usePartenerDetails.js
 import { useQuery, useMutation } from "@tanstack/react-query";
-
-const BASE_URL = import.meta.env.VITE_BASE_URL;
-
-// ==================== HEADERS ====================
-const getHeaders = () => {
-  const token = localStorage.getItem("token");
-  return {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token || ''}`,
-    "x-app-type": "Admin",
-    "Accept-Language": "en-US",
-  };
-};
-
-const getAdminHeaders = () => {
-  const token = localStorage.getItem("token");
-  return {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token || ''}`,
-    "x-app-type": "Admin",
-    "Accept-Language": "en",
-  };
-};
+import { getAuthHeaders, BASE_URL } from "../../utils/apiClient";
 
 // ==================== FETCH HELPER ====================
 const fetchMasterList = async (url) => {
   try {
     const res = await fetch(url, { 
-      headers: getHeaders(),
-      credentials: 'include',
+      headers: getAuthHeaders(),
+      // credentials:'include' removed — causes extra CORS preflight on every request.
     });
     
     if (res.status === 401) {
@@ -223,7 +201,7 @@ export const useSavePartnerPreferences = () =>
       
       const res = await fetch(`${BASE_URL}/api/auth/admin/users/partner-preferences`, {
         method: "POST",
-        headers: getAdminHeaders(),
+        headers: getAuthHeaders(),
         body: JSON.stringify(payload),
       });
 

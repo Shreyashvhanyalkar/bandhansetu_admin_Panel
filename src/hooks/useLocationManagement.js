@@ -1,13 +1,6 @@
 // src/hooks/useLocationManagement.js
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-
-const BASE_URL = import.meta.env.VITE_BASE_URL;
-
-const getAuthHeaders = () => ({
-  "Content-Type": "application/json",
-  Authorization: `Bearer ${localStorage.getItem("token")}`,
-  "x-app-type": "admin",
-});
+import { getAuthHeaders, BASE_URL } from "../utils/apiClient";
 
 const handleResponse = async (res) => {
   const json = await res.json();

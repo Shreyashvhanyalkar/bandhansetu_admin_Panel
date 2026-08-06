@@ -1,14 +1,6 @@
 // hooks/useNotificationQueries.js
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
-
-const BASE_URL = import.meta.env.VITE_BASE_URL;
-
-const getAuthHeaders = () => ({
-  "Content-Type": "application/json",
-  "x-app-type": "admin",
-  "Accept-Language": "en",
-  Authorization: `Bearer ${localStorage.getItem("token")}`,
-});
+import { getAuthHeaders, getUploadHeaders, BASE_URL } from "../utils/apiClient";
 
 // ==================== INFINITE SCROLL USERS FOR SELECT ====================
 export const useAllUsersInfinite = (searchTerm = "", limit = 20) => {
@@ -182,11 +174,7 @@ export const useUploadBanner = () => {
 
       const response = await fetch(`${BASE_URL}/api/auth/admin/upload-banner`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "x-app-type": "admin",
-          "Accept-Language": "en-us",
-        },
+        headers: getUploadHeaders(),
         body: formData,
       });
 

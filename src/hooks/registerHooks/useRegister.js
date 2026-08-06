@@ -1,14 +1,6 @@
 // src/hooks/registerHooks/useRegister.js
 import { useMutation } from "@tanstack/react-query";
-
-const BASE_URL = import.meta.env.VITE_BASE_URL;
-
-const getAuthHeaders = () => ({
-  "Content-Type": "application/json",
-  Authorization: `Bearer ${localStorage.getItem("token")}`,
-  "x-app-type": "admin",
-  "Accept-Language": "en",
-});
+import { getAuthHeaders, BASE_URL } from "../../utils/apiClient";
 
 // ==================== CREATE USER (Step 1: Register) ====================
 // POST /api/auth/admin/users/create

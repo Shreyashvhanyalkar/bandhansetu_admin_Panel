@@ -1,35 +1,13 @@
 // src/hooks/registerHooks/useBasicdetail.js
 import { useQuery, useMutation } from "@tanstack/react-query";
-
-const BASE_URL = import.meta.env.VITE_BASE_URL;
-
-// Master-data list endpoints with Admin header
-const getMasterHeaders = () => {
-  const token = localStorage.getItem("token");
-  
-  return {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token || ''}`,
-    "x-app-type": "Admin",
-    "Accept-Language": "en-US",
-  };
-};
-
-const getAdminHeaders = () => {
-  const token = localStorage.getItem("token");
-  return {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token || ''}`,
-    "x-app-type": "Admin",
-    "Accept-Language": "en",
-  };
-};
+import { getAuthHeaders, BASE_URL } from "../../utils/apiClient";
 
 const fetchMasterList = async (url) => {
   try {
     const res = await fetch(url, { 
-      headers: getMasterHeaders(),
-      credentials: 'include',
+      headers: getAuthHeaders(),
+      // credentials:'include' removed — it caused extra CORS preflight requests.
+      // Authorization: Bearer header is sufficient for authentication.
     });
     
     if (res.status === 401) {
@@ -147,7 +125,7 @@ export const useSaveBasicDetails = () =>
     mutationFn: async (payload) => {
       const res = await fetch(`${BASE_URL}/api/auth/admin/users/basic-details`, {
         method: "POST",
-        headers: getAdminHeaders(),
+        headers: getAuthHeaders(),
         body: JSON.stringify(payload),
       });
 

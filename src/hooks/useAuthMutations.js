@@ -2,8 +2,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { useDispatch } from "react-redux";
 import { loginSuccess, logout } from "../features/auth/Authslice";
-
-const BASE_URL = import.meta.env.VITE_BASE_URL;
+import { getAuthHeaders, BASE_URL } from "../utils/apiClient";
 
 // Helper functions for dynamic device info
 const getOS = () => {
@@ -106,11 +105,7 @@ export const useLogout = () => {
     mutationFn: async () => {
       const res = await fetch(`${BASE_URL}/api/auth/admin/logout`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "x-app-type": "admin",
-        },
+        headers: getAuthHeaders(),
       });
       // Don't throw on failure — we still want to clear local state
       return res.json().catch(() => ({}));

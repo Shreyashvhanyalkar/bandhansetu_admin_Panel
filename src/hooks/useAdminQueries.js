@@ -1,14 +1,6 @@
 // hooks/useAdminQueries.js
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
-
-const BASE_URL = import.meta.env.VITE_BASE_URL;
-
-const getAuthHeaders = () => ({
-  "Content-Type": "application/json",
-  Authorization: `Bearer ${localStorage.getItem("token")}`,
-  "x-app-type": "admin",
-  "Accept-Language": "en",
-});
+import { getAuthHeaders, BASE_URL } from "../utils/apiClient";
 
 const USERS_KEY = ["admin", "users"];
 
@@ -26,7 +18,7 @@ export const useAllUsersInfinite = (filters = {}) => {
 
   return useInfiniteQuery({
     queryKey: ["admin", "users", "infinite", { search, status, deleted, gender, city, state, limit }],
-    queryFn: async ({ pageParam = 0 }) => {
+    queryFn: async ({ pageParam = 0, signal }) => {
       const params = new URLSearchParams();
       params.set("limit", String(limit));
       params.set("offset", String(pageParam));
@@ -124,7 +116,7 @@ export const useAllUsers = (filters = {}) => {
 
   return useQuery({
     queryKey: ["admin", "users", { offset, limit, search, status, deleted, gender, city, state }],
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
       const params = new URLSearchParams();
       params.set("limit", String(limit));
       params.set("offset", String(offset));
@@ -209,7 +201,7 @@ export const useAllUsers = (filters = {}) => {
 export const useUserProfile = (userId) => {
   return useQuery({
     queryKey: ["admin", "userProfile", userId],
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
       if (!userId) throw new Error("User ID is required");
 
       const res = await fetch(`${BASE_URL}/api/auth/admin/users/${userId}`, {

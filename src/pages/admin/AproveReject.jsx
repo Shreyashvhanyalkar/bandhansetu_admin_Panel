@@ -1,5 +1,5 @@
 // src/pages/admin/AproveReject.jsx
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useInView } from "react-intersection-observer";
 
@@ -10,6 +10,7 @@ import {
   useDeleteUser,
   useRestoreUser,
 } from "../../hooks/useAdminQueries";
+import { getAuthHeaders } from "../../utils/apiClient";
 
 // ─── Design Tokens ────────────────────────────────────────────────────────────
 const C = {
@@ -332,6 +333,7 @@ export default function ApproveReject() {
     state: ""
   });
   const [searchInput, setSearchInput] = useState("");
+  const [cityInput, setCityInput] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [selected, setSelected] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -351,13 +353,19 @@ export default function ApproveReject() {
     const t = setTimeout(() => {
       // Remove any + signs and trim
       const cleanSearch = searchInput.trim().replace(/\+/g, ' ');
-      setFilters((f) => ({ ...f, search: cleanSearch, offset: 0 }));
+      setFilters((f) => {
+        if (f.search === cleanSearch) return f;
+        return { ...f, search: cleanSearch, offset: 0 };
+      });
     }, 400);
     return () => clearTimeout(t);
   }, [searchInput]);
 
+
+
+
   // Build filter object for API - sends ALL filters to backend
-  const buildFilters = useCallback(() => {
+  const apiFilters = useMemo(() => {
     return {
       search: filters.search,
       status: filters.status,
@@ -374,7 +382,7 @@ export default function ApproveReject() {
   }, [filters, advFilters]);
 
   // Infinite scroll query with all filters
-  const infiniteQuery = useAllUsersInfinite(buildFilters());
+  const infiniteQuery = useAllUsersInfinite(apiFilters);
 
   // Get users from infinite query
   const allUsers = infiniteQuery.data?.pages?.flatMap(page => page.users) || [];
@@ -469,16 +477,12 @@ export default function ApproveReject() {
       if (advFilters.city) params.set("city", advFilters.city);
       if (advFilters.state) params.set("state", advFilters.state);
 
-      const BASE_URL = import.meta.env.VITE_BASE_URL;
+      const { BASE_URL } = await import("../../utils/apiClient");
       const url = `${BASE_URL}/api/auth/admin/users/export?${params.toString()}`;
 
       const res = await fetch(url, {
         method: "GET",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "x-app-type": "admin",
-          "Accept-Language": "en",
-        },
+        headers: getAuthHeaders(),
       });
 
       if (!res.ok) {
@@ -546,6 +550,7 @@ export default function ApproveReject() {
   }, []);
 
   const clearAdvancedFilters = () => {
+    setCityInput("");
     setAdvFilters({ gender: "", ageMin: "", ageMax: "", city: "", state: "" });
     setFilters(f => ({ ...f, offset: 0 }));
   };
@@ -582,7 +587,7 @@ export default function ApproveReject() {
               Register User
             </button>
 
-           
+
           </div>
         </div>
 
@@ -653,10 +658,9 @@ export default function ApproveReject() {
                     onChange={e => updateAdvFilter('gender', e.target.value)}
                     className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 outline-none focus:border-[#fca5a5] focus:ring-2 focus:ring-[#fef2f2] cursor-pointer transition"
                   >
-                    <option value="">Any Gender</option>
+                    <option value="">Gender</option>
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
-                    <option value="Other">Other</option>
                   </select>
                 </div>
 
@@ -702,8 +706,22 @@ export default function ApproveReject() {
                   <input
                     type="text"
                     placeholder="e.g. Mumbai"
-                    value={advFilters.city}
-                    onChange={e => updateAdvFilter('city', e.target.value)}
+                    value={cityInput}
+                    onChange={e => setCityInput(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const cleanCity = cityInput.trim();
+                        setAdvFilters((f) => {
+                          if (f.city === cleanCity) return f;
+                          return { ...f, city: cleanCity };
+                        });
+                        setFilters((f) => ({ ...f, offset: 0 }));
+                        // Optionally close the filter panel or blur the input
+                        // setShowFilters(false);
+                        e.target.blur();
+                      }
+                    }}
                     className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 outline-none focus:border-[#fca5a5] focus:ring-2 focus:ring-[#fef2f2] transition"
                   />
                 </div>
@@ -711,10 +729,10 @@ export default function ApproveReject() {
 
               {activeFilterCount > 0 && (
                 <div className="mt-3 flex items-center gap-2 flex-wrap">
-                  <span className="text-xs text-gray-500 font-medium">
+                  {/* <span className="text-xs text-gray-500 font-medium">
                     {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''} active ·
                     <span className="font-bold text-gray-900 ml-1">{users.length}</span> users found
-                  </span>
+                  </span> */}
                   {advFilters.gender && <Chip label={`Gender: ${advFilters.gender}`} onRemove={() => updateAdvFilter('gender', '')} />}
                   {advFilters.ageMin && <Chip label={`Age ≥ ${advFilters.ageMin}`} onRemove={() => updateAdvFilter('ageMin', '')} />}
                   {advFilters.ageMax && <Chip label={`Age ≤ ${advFilters.ageMax}`} onRemove={() => updateAdvFilter('ageMax', '')} />}

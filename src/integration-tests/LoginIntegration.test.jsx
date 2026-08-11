@@ -55,21 +55,22 @@ describe('Login Integration', () => {
     renderWithProviders(<AppRoutes />, {
       preloadedState: { auth: { isAuthenticated: false, user: null, token: null } },
     });
-    expect(screen.getByText(/BandhanSetu/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Welcome back/i })).toBeInTheDocument();
+    expect(screen.getByAltText(/Bandhan Setu Logo/i)).toBeInTheDocument();
   });
 
   it('renders email input field', () => {
     renderWithProviders(<AppRoutes />, {
       preloadedState: { auth: { isAuthenticated: false, user: null, token: null } },
     });
-    expect(screen.getByPlaceholderText(/admin@bandhansetu\.com/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/Email Address \*/i)).toBeInTheDocument();
   });
 
   it('renders password input field', () => {
     renderWithProviders(<AppRoutes />, {
       preloadedState: { auth: { isAuthenticated: false, user: null, token: null } },
     });
-    expect(screen.getByPlaceholderText(/Admin@123/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/Password \*/i)).toBeInTheDocument();
   });
 
   it('renders Sign In button', () => {
@@ -84,8 +85,8 @@ describe('Login Integration', () => {
       preloadedState: { auth: { isAuthenticated: false, user: null, token: null } },
     });
 
-    const emailInput = screen.getByPlaceholderText(/admin@bandhansetu\.com/i);
-    const passwordInput = screen.getByPlaceholderText(/Admin@123/i);
+    const emailInput = screen.getByPlaceholderText(/Email Address \*/i);
+    const passwordInput = screen.getByPlaceholderText(/Password \*/i);
 
     fireEvent.change(emailInput, { target: { value: 'admin@test.com' } });
     fireEvent.change(passwordInput, { target: { value: 'password123' } });
@@ -112,8 +113,7 @@ describe('Login Integration', () => {
     const signInBtn = screen.getByRole('button', { name: /sign in/i });
     fireEvent.click(signInBtn);
 
-    // HTML5 validation prevents submission; email field should be focused / required
-    const emailInput = screen.getByPlaceholderText(/admin@bandhansetu\.com/i);
+    const emailInput = screen.getByPlaceholderText(/Email Address \*/i);
     expect(emailInput).toBeRequired();
   });
 });

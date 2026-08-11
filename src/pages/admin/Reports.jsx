@@ -472,7 +472,7 @@ export default function Reports() {
       )}
 
       {/* Animation Styles */}
-      <style jsx>{`
+      <style>{`
         @keyframes fadeIn {
           from { opacity: 0; }
           to { opacity: 1; }

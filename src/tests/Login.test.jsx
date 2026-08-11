@@ -51,26 +51,24 @@ describe('Login Component', () => {
     });
   });
 
-  it('should render the BandhanSetu Admin Portal heading', () => {
+  it('should render the Welcome back heading and logo', () => {
     renderWithProviders(<Login />);
-    expect(screen.getByText('BandhanSetu')).toBeInTheDocument();
-    expect(screen.getByText('Admin Portal')).toBeInTheDocument();
+    expect(screen.getByText('Welcome back')).toBeInTheDocument();
+    expect(screen.getByAltText('Bandhan Setu Logo')).toBeInTheDocument();
   });
 
   it('should render email input, password input, and Sign In button', () => {
     renderWithProviders(<Login />);
-    // Fixed placeholder text to match actual Login component
-    expect(screen.getByPlaceholderText('admin@bandhansetu.com')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Admin@123')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Email Address *')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Password *')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Sign In/i })).toBeInTheDocument();
   });
 
   it('should allow typing into email and password fields', () => {
     renderWithProviders(<Login />);
 
-    // Fixed placeholder text to match actual Login component
-    const emailInput = screen.getByPlaceholderText('admin@bandhansetu.com');
-    const passwordInput = screen.getByPlaceholderText('Admin@123');
+    const emailInput = screen.getByPlaceholderText('Email Address *');
+    const passwordInput = screen.getByPlaceholderText('Password *');
 
     fireEvent.change(emailInput, { target: { value: 'admin@example.com' } });
     fireEvent.change(passwordInput, { target: { value: 'password123' } });
@@ -82,9 +80,8 @@ describe('Login Component', () => {
   it('should trigger loginMutation.mutate with form data on form submit', () => {
     renderWithProviders(<Login />);
 
-    // Fixed placeholder text to match actual Login component
-    const emailInput = screen.getByPlaceholderText('admin@bandhansetu.com');
-    const passwordInput = screen.getByPlaceholderText('Admin@123');
+    const emailInput = screen.getByPlaceholderText('Email Address *');
+    const passwordInput = screen.getByPlaceholderText('Password *');
 
     fireEvent.change(emailInput, { target: { value: 'admin@example.com' } });
     fireEvent.change(passwordInput, { target: { value: 'password123' } });
@@ -107,9 +104,8 @@ describe('Login Component', () => {
     renderWithProviders(<Login />);
 
     expect(screen.getByRole('button', { name: /Signing in.../i })).toBeInTheDocument();
-    // Fixed placeholder text to match actual Login component
-    expect(screen.getByPlaceholderText('admin@bandhansetu.com')).toBeDisabled();
-    expect(screen.getByPlaceholderText('Admin@123')).toBeDisabled();
+    expect(screen.getByPlaceholderText('Email Address *')).toBeDisabled();
+    expect(screen.getByPlaceholderText('Password *')).toBeDisabled();
   });
 
   it('should display an error message when login fails', () => {

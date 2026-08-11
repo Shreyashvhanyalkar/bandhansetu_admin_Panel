@@ -972,8 +972,8 @@ describe('ProfileDetails Component', () => {
       renderWithProviders(<ProfileDetails />);
 
       await waitFor(() => {
-        expect(screen.getByText('Location:')).toBeInTheDocument();
-        expect(screen.getByText('—')).toBeInTheDocument();
+        expect(screen.getByText('City:')).toBeInTheDocument();
+        expect(screen.getAllByText('N/A').length).toBeGreaterThan(0);
       });
     });
 

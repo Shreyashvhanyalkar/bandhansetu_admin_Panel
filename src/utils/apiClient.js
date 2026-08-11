@@ -14,7 +14,7 @@
 const RAW_BASE_URL = import.meta.env.VITE_BASE_URL;
 // In development, use a relative path (empty string) so Vite's proxy intercepts it.
 // This prevents the browser from sending CORS preflight OPTIONS requests.
-const BASE_URL = import.meta.env.DEV ? "" : RAW_BASE_URL;
+const BASE_URL = (import.meta.env.DEV && import.meta.env.MODE !== "test") ? "" : RAW_BASE_URL;
 
 /** Returns the standard admin request headers with the current JWT token. */
 export const getAuthHeaders = () => ({

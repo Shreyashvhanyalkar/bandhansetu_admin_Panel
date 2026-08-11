@@ -219,6 +219,7 @@ describe('useAllUsersInfinite (notification select)', () => {
     const wrapper = createWrapper();
     const { result } = renderHook(() => useAllUsersInfinite('Anita'), { wrapper });
 
+    result.current.fetchNextPage();
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     const page = result.current.data.pages[0];
@@ -250,6 +251,7 @@ describe('useAllUsersInfinite (notification select)', () => {
     const wrapper = createWrapper();
     const { result } = renderHook(() => useAllUsersInfinite(''), { wrapper });
 
+    result.current.fetchNextPage();
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     const user = result.current.data.pages[0].users[0];
@@ -270,6 +272,7 @@ describe('useAllUsersInfinite (notification select)', () => {
     const wrapper = createWrapper();
     const { result } = renderHook(() => useAllUsersInfinite(), { wrapper });
 
+    result.current.fetchNextPage();
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(result.current.error.message).toBe('Failed to fetch users');
   });

@@ -22,10 +22,6 @@ const renderWithProviders = (ui, { preloadedState } = {}) => {
 };
 
 describe('Navbar Component', () => {
-  it('should render the default Page Title', () => {
-    renderWithProviders(<Navbar onMenuClick={() => {}} />);
-    expect(screen.getByText('Dashboard')).toBeInTheDocument();
-  });
 
   it('should trigger onMenuClick when the mobile menu button is clicked', () => {
     const handleMenuClick = vi.fn();

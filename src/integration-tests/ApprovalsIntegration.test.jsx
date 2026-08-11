@@ -70,7 +70,7 @@ describe('Approvals Integration', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /User Requests/i })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /User Management/i })).toBeInTheDocument();
     });
   });
 });

@@ -290,7 +290,7 @@ export default function ReligionManagement() {
   const editReligionMutation = useEditReligion();
   const deleteReligionMutation = useDeleteReligion();
 
-  const addCasteMutation = useAddCaste(selectedCasteId); // note: passing caste ID context
+  const addCasteMutation = useAddCaste(selectedReligionId);
   const editCasteMutation = useEditCaste(selectedReligionId);
   const deleteCasteMutation = useDeleteCaste(selectedReligionId);
 

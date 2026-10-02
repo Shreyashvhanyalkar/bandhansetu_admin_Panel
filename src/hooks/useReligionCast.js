@@ -157,7 +157,7 @@ export const useAddCaste = (religionId) => {
   return useMutation({
     mutationFn: addCaste,
     onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: RELIGION_KEYS.castes(religionId) }),
+      queryClient.invalidateQueries({ queryKey: ["castes"], exact: false }),
   });
 };
 
@@ -175,11 +175,12 @@ export const useEditCaste = (religionId) => {
   return useMutation({
     mutationFn: editCaste,
     onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: RELIGION_KEYS.castes(religionId) }),
+      queryClient.invalidateQueries({ queryKey: ["castes"], exact: false }),
   });
 };
 
-const deleteCaste = async ({ id }) => {
+const deleteCaste = async (arg) => {
+  const id = typeof arg === "object" && arg !== null ? arg.id : arg;
   const res = await fetch(`${BASE_URL}/api/auth/admin/caste/${id}`, {
     method: "DELETE",
     headers: getAuthHeaders(),
@@ -192,7 +193,7 @@ export const useDeleteCaste = (religionId) => {
   return useMutation({
     mutationFn: deleteCaste,
     onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: RELIGION_KEYS.castes(religionId) }),
+      queryClient.invalidateQueries({ queryKey: ["castes"], exact: false }),
   });
 };
 
@@ -208,22 +209,25 @@ const fetchSubcastsByCaste = async (casteId) => {
   });
   const json = await handleResponse(res);
   
-  
-  // Handle different response structures
-  if (json.subcasts && Array.isArray(json.subcasts)) {
-    return json.subcasts;
+  let rawArr = [];
+  if (json.subcastes && Array.isArray(json.subcastes)) {
+    rawArr = json.subcastes;
+  } else if (json.subcasts && Array.isArray(json.subcasts)) {
+    rawArr = json.subcasts;
+  } else if (json.data?.subcasts && Array.isArray(json.data.subcasts)) {
+    rawArr = json.data.subcasts;
+  } else if (Array.isArray(json)) {
+    rawArr = json;
+  } else if (json.data && Array.isArray(json.data)) {
+    rawArr = json.data;
   }
-  if (json.data?.subcasts && Array.isArray(json.data.subcasts)) {
-    return json.data.subcasts;
-  }
-  if (Array.isArray(json)) {
-    return json;
-  }
-  if (json.data && Array.isArray(json.data)) {
-    return json.data;
-  }
-  
-  return [];
+
+  // Ensure both subcaste_name and subcast_name fields exist for UI compatibility
+  return rawArr.map((sc) => ({
+    ...sc,
+    subcaste_name: sc.subcaste_name || sc.subcast_name || "",
+    subcast_name: sc.subcast_name || sc.subcaste_name || "",
+  }));
 };
 
 export const useGetSubcasts = (casteId) =>
@@ -248,7 +252,7 @@ export const useAddSubcast = (casteId) => {
   return useMutation({
     mutationFn: addSubcast,
     onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: RELIGION_KEYS.subcasts(casteId) }),
+      queryClient.invalidateQueries({ queryKey: ["subcasts"], exact: false }),
   });
 };
 
@@ -266,11 +270,12 @@ export const useEditSubcast = (casteId) => {
   return useMutation({
     mutationFn: editSubcast,
     onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: RELIGION_KEYS.subcasts(casteId) }),
+      queryClient.invalidateQueries({ queryKey: ["subcasts"], exact: false }),
   });
 };
 
-const deleteSubcast = async (id) => {
+const deleteSubcast = async (arg) => {
+  const id = typeof arg === "object" && arg !== null ? arg.id : arg;
   const res = await fetch(`${BASE_URL}/api/auth/admin/subcast/${id}`, {
     method: "DELETE",
     headers: getAuthHeaders(),
@@ -283,6 +288,6 @@ export const useDeleteSubcast = (casteId) => {
   return useMutation({
     mutationFn: deleteSubcast,
     onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: RELIGION_KEYS.subcasts(casteId) }),
+      queryClient.invalidateQueries({ queryKey: ["subcasts"], exact: false }),
   });
 };

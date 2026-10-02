@@ -21,9 +21,11 @@ export const LOCATION_KEYS = {
 const fetchCountries = async () => {
   const res = await fetch(`${BASE_URL}/api/auth/admin/country`, { headers: getAuthHeaders() });
   const json = await handleResponse(res);
-  // Handle both: direct array OR wrapped in { countries: [...] }
-  return Array.isArray(json) ? json : (json.countries || []);
-
+  const arr = Array.isArray(json) ? json : (json.countries || []);
+  return arr.map((c) => ({
+    ...c,
+    country_name: c.country_name || c.name || "",
+  }));
 };
 
 export const useGetCountries = () =>
@@ -36,7 +38,7 @@ export const useAddCountry = () => {
       const res = await fetch(`${BASE_URL}/api/auth/admin/country`, {
         method: "POST",
         headers: getAuthHeaders(),
-        body: JSON.stringify({ country_name }),
+        body: JSON.stringify({ country_name, name: country_name }),
       });
       return handleResponse(res);
     },
@@ -51,7 +53,7 @@ export const useEditCountry = () => {
       const res = await fetch(`${BASE_URL}/api/auth/admin/country/${id}`, {
         method: "PUT",
         headers: getAuthHeaders(),
-        body: JSON.stringify({ country_name }),
+        body: JSON.stringify({ country_name, name: country_name }),
       });
       return handleResponse(res);
     },
@@ -69,7 +71,11 @@ export const useDeleteCountry = () => {
       });
       return handleResponse(res);
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: LOCATION_KEYS.countries }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: LOCATION_KEYS.countries });
+      queryClient.invalidateQueries({ queryKey: ["locations", "states"], exact: false });
+      queryClient.invalidateQueries({ queryKey: ["locations", "cities"], exact: false });
+    },
   });
 };
 
@@ -78,7 +84,11 @@ const fetchStatesByCountry = async (countryId) => {
   if (!countryId) return [];
   const res = await fetch(`${BASE_URL}/api/auth/admin/state?country_id=${countryId}`, { headers: getAuthHeaders() });
   const json = await handleResponse(res);
-  return Array.isArray(json) ? json : (json.states || []);
+  const arr = Array.isArray(json) ? json : (json.states || []);
+  return arr.map((s) => ({
+    ...s,
+    state_name: s.state_name || s.name || "",
+  }));
 };
 
 export const useGetStates = (countryId) =>
@@ -93,16 +103,15 @@ export const useAddState = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ state_name, country_id }) => {
-
       const res = await fetch(`${BASE_URL}/api/auth/admin/state`, {
         method: "POST",
         headers: getAuthHeaders(),
-        body: JSON.stringify({ state_name, country_id }),
+        body: JSON.stringify({ state_name, name: state_name, country_id }),
       });
       return handleResponse(res);
     },
-    onSuccess: (_, { country_id }) =>
-      queryClient.invalidateQueries({ queryKey: LOCATION_KEYS.states(country_id) }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["locations", "states"], exact: false }),
   });
 };
 
@@ -113,12 +122,10 @@ export const useEditState = () => {
       const res = await fetch(`${BASE_URL}/api/auth/admin/state/${id}`, {
         method: "PUT",
         headers: getAuthHeaders(),
-        body: JSON.stringify({ state_name }),
+        body: JSON.stringify({ state_name, name: state_name }),
       });
       return handleResponse(res);
     },
-    // FIX: Use prefix key ["locations", "states"] with exact:false to match all
-    // cached state queries like ["locations", "states", 1], ["locations", "states", 2], etc.
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["locations", "states"], exact: false }),
   });
@@ -134,9 +141,10 @@ export const useDeleteState = () => {
       });
       return handleResponse(res);
     },
-    // FIX: Same prefix invalidation as useEditState
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["locations", "states"], exact: false }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["locations", "states"], exact: false });
+      queryClient.invalidateQueries({ queryKey: ["locations", "cities"], exact: false });
+    },
   });
 };
 
@@ -145,7 +153,11 @@ const fetchCitiesByState = async (stateId) => {
   if (!stateId) return [];
   const res = await fetch(`${BASE_URL}/api/auth/admin/city?state_id=${stateId}`, { headers: getAuthHeaders() });
   const json = await handleResponse(res);
-  return Array.isArray(json) ? json : (json.cities || []);
+  const arr = Array.isArray(json) ? json : (json.cities || []);
+  return arr.map((c) => ({
+    ...c,
+    city_name: c.city_name || c.name || "",
+  }));
 };
 
 export const useGetCities = (stateId) =>
@@ -163,12 +175,12 @@ export const useAddCity = () => {
       const res = await fetch(`${BASE_URL}/api/auth/admin/city`, {
         method: "POST",
         headers: getAuthHeaders(),
-        body: JSON.stringify({ city_name, state_id }),
+        body: JSON.stringify({ city_name, name: city_name, state_id }),
       });
       return handleResponse(res);
     },
-    onSuccess: (_, { state_id }) =>
-      queryClient.invalidateQueries({ queryKey: LOCATION_KEYS.cities(state_id) }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["locations", "cities"], exact: false }),
   });
 };
 
@@ -179,11 +191,10 @@ export const useEditCity = () => {
       const res = await fetch(`${BASE_URL}/api/auth/admin/city/${id}`, {
         method: "PUT",
         headers: getAuthHeaders(),
-        body: JSON.stringify({ city_name }),
+        body: JSON.stringify({ city_name, name: city_name }),
       });
       return handleResponse(res);
     },
-    // FIX: Drop the broken setQueriesData + use prefix invalidation
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["locations", "cities"], exact: false }),
   });
@@ -199,7 +210,6 @@ export const useDeleteCity = () => {
       });
       return handleResponse(res);
     },
-    // FIX: Same prefix invalidation as useEditCity
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["locations", "cities"], exact: false }),
   });

@@ -2,7 +2,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import Plans from "./pages/admin/Plans";
-import Login from "./pages/auth/login";
+import Login from "./pages/Auth/Login";
 import Layout from "./pages/layout/Layout";
 import Dashboard from "./pages/admin/Dashboard";
 import ApproveReject from "./pages/admin/AproveReject";
